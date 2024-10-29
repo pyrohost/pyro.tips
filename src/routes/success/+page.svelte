@@ -1,3 +1,20 @@
+<script lang="ts">
+	import { Confetti } from 'svelte-confetti';
+</script>
+
+<div
+	class="pointer-events-none fixed left-0 top-[-50px] flex h-screen w-screen justify-center overflow-hidden"
+>
+	<Confetti
+		x={[-5, 5]}
+		y={[0, 0.1]}
+		duration={10000}
+		amount={200}
+		fallDistance="100vh"
+		delay={[500, 2000]}
+	/>
+</div>
+
 <!-- Centered form for ordering -->
 <div class="flex h-screen items-center justify-center">
 	<div class="max-w-md bg-zinc-900 p-10 shadow-xl">
