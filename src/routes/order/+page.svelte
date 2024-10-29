@@ -1,7 +1,21 @@
 <script lang="ts">
+	import PyroLogo from '$lib/components/pyroLogo.svelte';
+	import PyroToast from '$lib/components/pyroToast.svelte';
+
 	let isLoading = $state(false);
+	let loadingTitle = $state('Working on it!');
+	let loadingMessage = $state('Processing your order, please wait.');
+	let toastTitle = $state('');
+	let toastMessage = $state('');
+	let toastType = $state('error');
+	let isToastShown = $state(false);
 	let isDropdownOpen = $state(false);
 	let step = $state(1);
+	let orderData = $state({
+		amount: 0,
+		email: '',
+		message: ''
+	});
 
 	const recipients = [
 		{ name: 'Sticks', profilePic: 'https://img.sticks.ovh/floppa' },
@@ -14,41 +28,87 @@
 		isDropdownOpen = false;
 	}
 
+	function toPayment() {
+		// Validate order data
+		if (!selectedRecipient || !orderData.amount || !orderData.email) {
+			toastTitle = 'Error';
+			toastMessage = 'Please fill out all fields.';
+			isToastShown = true;
+			return;
+		}
+
+		// Make sure we have a valid email
+		if (!orderData.email.match(/\S+@\S+\.\S+/)) {
+			toastTitle = 'Error';
+			toastMessage = 'Please enter a valid email address.';
+			return;
+		}
+
+		// Don't exceed 1000 USD
+		if (orderData.amount > 1000) {
+			toastTitle = 'Error';
+			toastMessage = 'While we appreciate your generosity, we can only accept orders up to $1000.';
+			return;
+		}
+
+		step = 2;
+	}
+
 	function goToPreviousStep() {
-		step -= 1;
+		step = 1;
 	}
 </script>
 
 <!-- Centered responsive form for ordering -->
 <div class="flex h-screen items-center justify-center px-4">
-	<div class="w-full max-w-md bg-zinc-900 p-8 shadow-xl">
-		<svg
-			class="mx-auto mb-2 size-12"
-			width="512"
-			height="512"
-			viewBox="0 0 512 512"
-			fill="none"
-			xmlns="http://www.w3.org/2000/svg"
-		>
-			<path
-				d="M214.015 391.852C214.015 384.205 214.015 380.38 214.655 377.201C217.286 364.142 227.626 353.935 240.852 351.338C244.074 350.705 247.947 350.705 255.694 350.705C263.441 350.705 267.314 350.705 270.534 351.338C283.762 353.935 294.102 364.142 296.732 377.201C297.373 380.38 297.373 384.205 297.373 391.852V405.568C297.373 415.822 297.373 420.95 295.139 424.769C293.676 427.272 291.571 429.349 289.037 430.794C285.168 432.999 279.975 432.999 269.586 432.999H241.801C231.413 432.999 226.219 432.999 222.351 430.794C219.816 429.349 217.712 427.272 216.248 424.769C214.015 420.95 214.015 415.822 214.015 405.568V391.852Z"
-				fill="white"
-			/>
-			<path
-				d="M151.57 432.999H180.132C183.366 432.999 184.983 432.999 185.817 431.984C186.651 430.97 186.302 429.333 185.603 426.06C158.099 297.217 285.284 326.182 303.698 237.038C313.096 191.542 286.344 130.476 287.924 88.0451C288.121 82.7268 288.22 80.0677 286.764 79.2435C285.307 78.4193 283.203 79.7417 278.995 82.3863C219.545 119.744 176.221 191.157 192.054 234.972C194.475 241.671 195.685 245.019 194.154 246.242C192.624 247.466 190.034 245.888 184.854 242.735C176.431 237.609 166.422 229.215 159.463 215.99C157.422 212.11 156.401 210.17 154.903 210.024C153.405 209.877 152.119 211.459 149.545 214.621C74.7421 306.535 105.055 398.323 148.258 431.894C148.948 432.429 149.292 432.698 149.734 432.849C150.176 432.999 150.641 432.999 151.57 432.999Z"
-				fill="white"
-			/>
-			<path
-				d="M337.915 224.025C341.744 266.252 316.007 295.136 286.61 315.144C281.477 318.637 278.911 320.384 279.133 322.047C279.355 323.711 282.422 324.789 288.556 326.944C327.753 340.716 329.534 380.192 326.288 427.099C326.097 429.872 326 431.259 326.825 432.129C327.648 433 329.049 433 331.849 433H356.333C357.075 433 357.446 433 357.805 432.903C358.165 432.806 358.483 432.621 359.12 432.25C446.892 381.14 399.768 259.05 346.221 218.749C342.318 215.811 340.366 214.343 338.779 215.207C337.194 216.072 337.434 218.723 337.915 224.025Z"
-				fill="white"
-			/>
-		</svg>
-		<h1 class="mb-4 text-center text-3xl font-semibold text-white">Order Meal</h1>
-		<p class="mx-auto mb-6 max-w-sm text-center text-gray-200">
-			Select your order details below to gift a meal to our team members.
-		</p>
+	<PyroToast
+		bind:shown={isToastShown}
+		title={toastTitle}
+		message={toastMessage}
+		duration={5000}
+		position="top-right"
+		type={toastType}
+	/>
+	<div class="w-full max-w-md p-8 shadow-xl">
+		<PyroLogo style="mx-auto mb-6 h-16 w-16" />
+		{#if step === 1 && !isLoading}
+			<h1 class="mb-4 text-center text-3xl font-semibold text-white">Order Meal</h1>
+			<p class="mx-auto mb-6 max-w-sm text-center text-gray-200">
+				Select your order details below to gift a meal to our team members.
+			</p>
+		{/if}
+		{#if step === 2 && !isLoading}
+			<h1 class="mb-4 text-center text-3xl font-semibold text-white">Pay for Order</h1>
+			<p class="mx-auto mb-6 max-w-sm text-center text-gray-200">
+				Enter your payment details below to complete your order. Payments our securely processed by
+				Stripe.
+			</p>
+		{/if}
 
-		{#if step === 1}
+		{#if isLoading}
+			<div class="flex flex-col items-center justify-center">
+				<svg
+					aria-hidden="true"
+					class="inline size-10 animate-spin fill-gray-600 text-gray-200 dark:fill-gray-300 dark:text-gray-600"
+					viewBox="0 0 100 101"
+					fill="none"
+					xmlns="http://www.w3.org/2000/svg"
+				>
+					<path
+						d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+						fill="currentColor"
+					/>
+					<path
+						d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+						fill="currentFill"
+					/>
+				</svg>
+				<p class="mt-2 text-center text-gray-200">{loadingTitle}</p>
+				<p class="mt-1 text-center text-gray-400">{loadingMessage}</p>
+			</div>
+		{/if}
+
+		{#if step === 1 && !isLoading}
 			<form class="flex flex-col space-y-4">
 				<!-- Custom Recipient dropdown -->
 				<div class="relative flex flex-col space-y-2">
@@ -108,6 +168,7 @@
 							id="amount"
 							name="amount"
 							class="flex-grow border-none bg-black text-gray-200 outline-none"
+							bind:value={orderData.amount}
 						/>
 					</div>
 					<p class="text-sm text-gray-400">Specify the amount in USD.</p>
@@ -121,6 +182,7 @@
 						id="email"
 						name="email"
 						class="input border-gray-700 bg-black text-gray-200"
+						bind:value={orderData.email}
 					/>
 					<p class="text-sm text-gray-400">Enter your email for updates on your order.</p>
 				</div>
@@ -128,7 +190,11 @@
 				<!-- Message field -->
 				<div class="flex flex-col space-y-2">
 					<label for="message" class="text-gray-200">Message</label>
-					<textarea id="message" name="message" class="input border-gray-700 bg-black text-gray-200"
+					<textarea
+						id="message"
+						name="message"
+						class="input border-gray-700 bg-black text-gray-200"
+						bind:value={orderData.message}
 					></textarea>
 					<p class="text-sm text-gray-400">Optional: Leave a note for the gift recipient.</p>
 				</div>
@@ -138,23 +204,17 @@
 					<button
 						class="w-full bg-white py-2 text-black transition-colors duration-200 hover:text-white hover:opacity-80 focus:outline-none"
 						disabled={isLoading}
-						onclick={() => (step += 1)}
+						onclick={toPayment}
 					>
-						{isLoading ? 'Loading...' : 'Submit'}
+						Continue to Payment
 					</button>
 				</div>
 			</form>
 		{/if}
 
 		<!-- Step 2: Billing Form -->
-		{#if step === 2}
+		{#if step === 2 && !isLoading}
 			<form class="flex flex-col space-y-4">
-				<h2 class="text-center text-xl font-semibold text-white">Billing Information</h2>
-				<p class="text-center text-gray-200">
-					Enter your payment details below to complete your order. We accept any card stripe
-					supports.
-				</p>
-
 				<!-- Card number input -->
 				<div class="flex flex-col space-y-2">
 					<label for="cardNumber" class="text-gray-200">Card Number</label>
@@ -208,10 +268,34 @@
 						class="btn bg-white py-2 text-black transition-colors duration-200 hover:text-white hover:opacity-80 focus:outline-none"
 						disabled={isLoading}
 					>
-						{isLoading ? 'Loading...' : 'Place Order'}
+						Place Order
 					</button>
 				</div>
 			</form>
+		{/if}
+
+		{#if step === 3 && !isLoading}
+			<div class="max-w-md p-10 shadow-xl">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke-width="1.5"
+					stroke="currentColor"
+					class="mx-auto mb-2 size-12 text-white"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+					/>
+				</svg>
+
+				<h1 class="mb-4 text-3xl font-semibold text-white">Great Success!</h1>
+				<p class="mb-6 max-w-sm text-gray-200">
+					Thank you for your support! We'll share updates as they are come. You rock :)
+				</p>
+			</div>
 		{/if}
 	</div>
 </div>
