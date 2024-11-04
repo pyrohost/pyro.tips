@@ -6,7 +6,10 @@
 
 	import { quintOut } from 'svelte/easing';
 	import { ChevronDownIcon } from 'lucide-svelte';
+	import { getCaretCoordinates } from '$lib/util';
+	import ChaChingParticles from '$lib/components/ChaChingParticles.svelte';
 
+	let particleManager: ReturnType<typeof ChaChingParticles>;
 	let isLoading = $state(false);
 	let loadingTitle = $state('Working on it!');
 	let loadingMessage = $state('Processing your order, please wait.');
@@ -21,6 +24,30 @@
 		email: '',
 		message: ''
 	});
+
+	let tx = $state(0);
+	let ty = $state(0);
+
+	const shake = (duration: number, intensity: number) => {
+		// const interval = setInterval(() => {
+		// 	tx = Math.random() * 10 - 5;
+		// 	ty = Math.random() * 10 - 5;
+		// }, 1000 / 60);
+		// setTimeout(() => {
+		// 	clearInterval(interval);
+		// 	tx = 0;
+		// 	ty = 0;
+		// }, 500);
+		const interval = setInterval(() => {
+			tx = Math.random() * intensity - intensity / 2;
+			ty = Math.random() * intensity - intensity / 2;
+		}, 1000 / 60);
+		setTimeout(() => {
+			clearInterval(interval);
+			tx = 0;
+			ty = 0;
+		}, duration);
+	};
 
 	const recipients = [
 		{ name: 'Sticks', profilePic: 'https://img.sticks.ovh/floppa' },
@@ -107,14 +134,31 @@
 
 	function validateInput(e: Event) {
 		const target = e.target as HTMLInputElement;
+
 		if (orderData.amount < 0) {
 			orderData.amount = 0;
 		}
 		if (orderData.amount > 1000) {
 			orderData.amount = 1000;
 		}
+
+		const selectionStart = target.selectionStart;
+		if (selectionStart !== null) {
+			const { top: localTop, left: localLeft } = getCaretCoordinates(target, selectionStart);
+			// this is relative to the input element, so we need to add the input's position
+			const { top, left } = target.getBoundingClientRect();
+			// this is the absolute position of the caret
+			const absoluteTop = top + localTop;
+			const absoluteLeft = left + localLeft;
+			particleManager.spawnParticle(absoluteLeft, absoluteTop);
+			shake(100, 25);
+		}
 	}
 </script>
+
+<div style="transform: translate({tx}px, {ty}px)" class="fixed left-0 top-0 z-[9999]">
+	<ChaChingParticles bind:this={particleManager} />
+</div>
 
 <!-- Centered responsive form for ordering -->
 <div class="flex h-screen items-center justify-center px-4">
@@ -126,7 +170,7 @@
 		position="top-right"
 		type={toastType}
 	/>
-	<div class="w-full max-w-md p-8 shadow-xl">
+	<div class="w-full max-w-md p-8 shadow-xl" style="transform: translate({tx}px, {ty}px)">
 		<PyroLogo style="mx-auto mb-6 h-16 w-16" />
 		{#if step === 1 && !isLoading}
 			<h1 class="mb-4 text-center text-3xl font-semibold text-white">Order Meal</h1>
@@ -248,11 +292,12 @@
 					>
 						<span class="mr-2 text-gray-400">$</span>
 						<input
-							type="number"
+							type="text"
 							id="amount"
 							name="amount"
 							min="0"
 							max="1000"
+							maxlength="7"
 							class="flex-grow border-none bg-black text-gray-200 outline-none [appearance:textfield] focus:!ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 							bind:value={orderData.amount}
 							oninput={validateInput}
