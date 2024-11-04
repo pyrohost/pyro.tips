@@ -24,7 +24,7 @@
 
 	const recipients = [
 		{ name: 'Sticks', profilePic: 'https://img.sticks.ovh/floppa' },
-		{ name: 'Team Pryo', profilePic: '/teamPyro.png' }
+		{ name: 'Team Pyro', profilePic: '/teamPyro.png' }
 	];
 	let selectedRecipient = $state(recipients[0]);
 
@@ -104,6 +104,16 @@
 			easing: config?.easing
 		};
 	};
+
+	function validateInput(e: Event) {
+		const target = e.target as HTMLInputElement;
+		if (orderData.amount < 0) {
+			orderData.amount = 0;
+		}
+		if (orderData.amount > 1000) {
+			orderData.amount = 1000;
+		}
+	}
 </script>
 
 <!-- Centered responsive form for ordering -->
@@ -222,14 +232,20 @@
 				<!-- Amount input with USD prefix -->
 				<div class="flex flex-col space-y-2">
 					<label for="amount" class="text-gray-200">Amount (USD)</label>
-					<div class="flex items-center border border-gray-700 bg-black p-2">
+					<div
+						class="flex items-center border border-gray-700 bg-black p-2 focus-within:ring-2 focus-within:ring-blue-600"
+					>
 						<span class="mr-2 text-gray-400">$</span>
 						<input
 							type="number"
 							id="amount"
 							name="amount"
-							class="flex-grow border-none bg-black text-gray-200 outline-none"
+							min="0"
+							max="1000"
+							class="flex-grow border-none bg-black text-gray-200 outline-none [appearance:textfield] focus:!ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 							bind:value={orderData.amount}
+							oninput={validateInput}
+							pattern="\d+"
 						/>
 					</div>
 					<p class="text-sm text-gray-400">Specify the amount in USD.</p>
