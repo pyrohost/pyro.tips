@@ -100,7 +100,7 @@
 					1,
 					0.95,
 					1
-				)})`,
+				)}; transform-origin: top center;`,
 			easing: config?.easing
 		};
 	};
