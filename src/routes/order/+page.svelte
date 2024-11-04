@@ -173,19 +173,30 @@
 					<div class="relative">
 						<button
 							type="button"
-							class="dropdown-button flex w-full cursor-pointer items-center border border-gray-700 bg-black p-2 text-gray-200"
+							class="dropdown-button relative flex w-full cursor-pointer items-center border border-gray-700 bg-black p-4 text-gray-200"
 							onclick={() => (isDropdownOpen = !isDropdownOpen)}
 						>
-							{#if selectedRecipient}
-								<img
-									src={selectedRecipient.profilePic}
-									alt={selectedRecipient.name}
-									class="mr-2 h-6 w-6 rounded-full"
-								/>
-								<span>{selectedRecipient.name}</span>
-							{:else}
-								<span>Select a recipient</span>
-							{/if}
+							{#key selectedRecipient.name}
+								<div
+									transition:blur={{
+										blurMultiplier: 2,
+										duration: 300,
+										easing: quintOut
+									}}
+									class="absolute left-4 flex items-center"
+								>
+									{#if selectedRecipient}
+										<img
+											src={selectedRecipient.profilePic}
+											alt={selectedRecipient.name}
+											class="mr-2 h-6 w-6 rounded-full"
+										/>
+										<span>{selectedRecipient.name}</span>
+									{:else}
+										<span>Select a recipient</span>
+									{/if}
+								</div>
+							{/key}
 							<span class="ml-auto text-gray-400">
 								<ChevronDownIcon
 									size={16}
