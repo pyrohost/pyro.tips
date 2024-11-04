@@ -61,8 +61,6 @@
 	}
 
 	function toPayment() {
-		step = 2;
-		return;
 		// Validate order data
 		if (!selectedRecipient || !orderData.amount || !orderData.email) {
 			toastTitle = 'Error';
