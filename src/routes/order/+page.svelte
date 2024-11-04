@@ -1,6 +1,6 @@
 <script lang="ts">
-	import PyroLogo from '$lib/components/pyroLogo.svelte';
-	import PyroToast from '$lib/components/pyroToast.svelte';
+	import PyroLogo from '$lib/components/PyroLogo.svelte';
+	import PyroToast from '$lib/components/PyroToast.svelte';
 
 	let isLoading = $state(false);
 	let loadingTitle = $state('Working on it!');

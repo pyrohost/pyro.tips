@@ -8,7 +8,7 @@ body {
 
 button,
 .btn {
-	@apply flex min-w-24 cursor-pointer select-none appearance-none items-center justify-center border border-dashed border-[#2c2c2c] bg-[#191919] px-5 py-2.5 text-lg text-white shadow-xl shadow-black/35 hover:bg-[#2c2c2c] active:bg-[#141414];
+	@apply flex min-w-24 cursor-pointer select-none appearance-none items-center justify-center border border-dashed border-[#2c2c2c] bg-[#191919] px-5 py-2.5 text-lg text-white shadow-xl shadow-black/35 hover:bg-[#2c2c2c] active:bg-[#141414] active:text-white;
 }
 
 iconify-icon {
