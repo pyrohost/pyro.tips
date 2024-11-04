@@ -1,6 +1,11 @@
 <script lang="ts">
 	import PyroLogo from '$lib/components/PyroLogo.svelte';
 	import PyroToast from '$lib/components/PyroToast.svelte';
+	import { onMount } from 'svelte';
+	import type { EasingFunction, TransitionConfig } from 'svelte/transition';
+
+	import { quintOut } from 'svelte/easing';
+	import { ChevronDownIcon } from 'lucide-svelte';
 
 	let isLoading = $state(false);
 	let loadingTitle = $state('Working on it!');
@@ -57,6 +62,48 @@
 	function goToPreviousStep() {
 		step = 1;
 	}
+
+	onMount(() => {
+		const click = (e: MouseEvent) => {
+			if (
+				isDropdownOpen &&
+				!(e.target as any).closest('.dropdown-menu') &&
+				!(e.target as any).closest('.dropdown-button')
+			) {
+				isDropdownOpen = false;
+			}
+		};
+
+		document.addEventListener('click', click);
+		return () => document.removeEventListener('click', click);
+	});
+
+	const remap = (value: number, low1: number, high1: number, low2: number, high2: number) =>
+		low2 + ((value - low1) * (high2 - low2)) / (high1 - low1);
+
+	const blur = (
+		node: HTMLElement,
+		config:
+			| Partial<{
+					blurMultiplier: number;
+					duration: number;
+					easing: EasingFunction;
+			  }>
+			| undefined
+	): TransitionConfig => {
+		return {
+			duration: config?.duration || 300,
+			css: (t, u) =>
+				`filter: blur(${(1 - t) * (config?.blurMultiplier || 1)}px); opacity: ${t}; transform: scale(${remap(
+					t,
+					0,
+					1,
+					0.95,
+					1
+				)})`,
+			easing: config?.easing
+		};
+	};
 </script>
 
 <!-- Centered responsive form for ordering -->
@@ -116,7 +163,7 @@
 					<div class="relative">
 						<button
 							type="button"
-							class="flex w-full cursor-pointer items-center border border-gray-700 bg-black p-2 text-gray-200"
+							class="dropdown-button flex w-full cursor-pointer items-center border border-gray-700 bg-black p-2 text-gray-200"
 							onclick={() => (isDropdownOpen = !isDropdownOpen)}
 						>
 							{#if selectedRecipient}
@@ -129,11 +176,25 @@
 							{:else}
 								<span>Select a recipient</span>
 							{/if}
-							<span class="ml-auto text-gray-400">&#x25BC;</span>
+							<span class="ml-auto text-gray-400">
+								<ChevronDownIcon
+									size={16}
+									style="transition: 200ms transform cubic-bezier(0.22, 1, 0.36, 1); transform: rotate({isDropdownOpen
+										? 180
+										: 0}deg)"
+								/>
+							</span>
 						</button>
 
 						{#if isDropdownOpen}
-							<div class="absolute z-10 mt-2 w-full bg-zinc-800 shadow-lg">
+							<div
+								transition:blur={{
+									blurMultiplier: 4,
+									duration: 300,
+									easing: quintOut
+								}}
+								class="dropdown-menu absolute z-10 mt-2 w-full bg-zinc-800 shadow-lg"
+							>
 								{#each recipients as recipient}
 									<div
 										class="flex cursor-pointer items-center p-2 hover:bg-zinc-700"
