@@ -1,7 +1,7 @@
 <script lang="ts">
 	import PyroLogo from '$lib/components/PyroLogo.svelte';
 	import PyroToast from '$lib/components/PyroToast.svelte';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { quintOut } from 'svelte/easing';
 	import { ChevronDownIcon, ChevronLeftIcon } from 'lucide-svelte';
 	import { getCaretCoordinates } from '$lib/util';
@@ -12,6 +12,8 @@
 	import type { Stripe } from '@stripe/stripe-js';
 	import type { StripeElements } from '@stripe/stripe-js';
 	import { blur } from '$lib/transitions';
+
+	const { data } = $props();
 
 	let stripe: Stripe | null = $state(null);
 	let elements: StripeElements | null = $state(null);
@@ -32,6 +34,20 @@
 		message: ''
 	});
 
+	let dropdownMenu: HTMLDivElement | null = $state(null);
+
+	$effect(() => {
+		if (isDropdownOpen) {
+			tick().then(() => {
+				if (!dropdownMenu) return;
+				const selected = dropdownMenu.querySelector('.bg-zinc-800');
+				if (selected) {
+					selected.scrollIntoView({ block: 'center' });
+				}
+			});
+		}
+	});
+
 	let tx = $state(0);
 	let ty = $state(0);
 
@@ -48,13 +64,9 @@
 		}, duration);
 	};
 
-	const recipients = [
-		{ name: 'Sticks', profilePic: 'https://img.sticks.ovh/floppa' },
-		{ name: 'Team Pyro', profilePic: '/teamPyro.png' }
-	];
-	let selectedRecipient = $state(recipients[0]);
+	let selectedRecipient = $state(data.staff.find((r) => r.user.id === '1053012491006910504')); // i wonder who put this here...
 
-	function selectRecipient(recipient: (typeof recipients)[0]) {
+	function selectRecipient(recipient: (typeof data.staff)[0]) {
 		selectedRecipient = recipient;
 		isDropdownOpen = false;
 	}
@@ -88,7 +100,8 @@
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify({
-				orderData
+				orderData,
+				recipient: selectedRecipient.user.id
 			})
 		});
 
@@ -101,8 +114,14 @@
 		}
 
 		const data = await response.json();
+		if (data.error) {
+			toastTitle = 'Error';
+			toastMessage = data.error;
+			toastType = 'error';
+			isToastShown = true;
+			return;
+		}
 		clientSecret = data.clientSecret;
-		console.log(data);
 		step = 2;
 	}
 
@@ -185,7 +204,7 @@
 		position="top-right"
 		type={toastType}
 	/>
-	<div class="w-full max-w-md p-8 shadow-xl" style="transform: translate({tx}px, {ty}px)">
+	<div class="w-full max-w-md bg-black p-8 shadow-xl" style="transform: translate({tx}px, {ty}px)">
 		<div class="grid grid-cols-1 grid-rows-1 place-items-center">
 			{#key step}
 				<div
@@ -236,7 +255,7 @@
 					{/if}
 
 					{#if step === 1 && !isLoading}
-						<form class="flex flex-col space-y-4">
+						<form class="flex flex-col space-y-4" onsubmit={(e) => e.preventDefault()}>
 							<!-- Custom Recipient dropdown -->
 							<div class="relative flex flex-col space-y-2">
 								<label for="recipient" class="text-gray-200">Recipient</label>
@@ -246,22 +265,36 @@
 										class="dropdown-button relative flex w-full cursor-pointer items-center border border-gray-700 bg-black p-4 text-gray-200"
 										onclick={() => (isDropdownOpen = !isDropdownOpen)}
 									>
-										{#key selectedRecipient.name}
+										{#key selectedRecipient?.user.id}
 											<div
-												transition:blur={{
-													blurMultiplier: 2,
-													duration: 300,
-													easing: quintOut
+												out:blur={{
+													blurMultiplier: 6,
+													duration: 500,
+													easing: quintOut,
+													scale: 0.75
+												}}
+												in:blur={{
+													blurMultiplier: 6,
+													duration: 500,
+													easing: quintOut,
+													scale: 1.25
 												}}
 												class="absolute left-3 flex items-center"
 											>
 												{#if selectedRecipient}
 													<img
-														src={selectedRecipient.profilePic}
-														alt={selectedRecipient.name}
+														src="https://cdn.discordapp.com/avatars/{selectedRecipient.user
+															.id}/{selectedRecipient.user.avatar}.webp?size=32"
+														alt={selectedRecipient.nick ||
+															selectedRecipient.user.global_name ||
+															selectedRecipient.user.username}
 														class="mr-2.5 h-6 w-6 rounded-full"
 													/>
-													<span>{selectedRecipient.name}</span>
+													<span
+														>{selectedRecipient.nick ||
+															selectedRecipient.user.global_name ||
+															selectedRecipient.user.username}</span
+													>
 												{:else}
 													<span>Select a recipient</span>
 												{/if}
@@ -284,11 +317,15 @@
 												duration: 300,
 												easing: quintOut
 											}}
-											class="dropdown-menu absolute z-10 mt-2 w-full bg-zinc-900 shadow-lg"
+											class="dropdown-menu absolute z-10 mt-2 max-h-96 w-full overflow-y-auto bg-zinc-900 shadow-lg"
+											bind:this={dropdownMenu}
 										>
-											{#each recipients as recipient}
+											{#each data.staff as recipient}
 												<div
-													class="flex cursor-pointer items-center px-3 py-3 hover:bg-zinc-800"
+													class="flex cursor-pointer items-center px-3 py-3 hover:bg-zinc-800 {selectedRecipient
+														?.user.id === recipient.user.id
+														? 'bg-zinc-800'
+														: ''}"
 													role="button"
 													tabindex="0"
 													onclick={() => selectRecipient(recipient)}
@@ -297,18 +334,25 @@
 													}}
 												>
 													<!-- <img
-														src={recipient.profilePic}
-														alt={recipient.name}
+														src={recipient.avatar}
+														alt={recipient.username}
 														class="mr-3 h-6 w-6 rounded-full"
 													/> -->
 													<div class="mr-3 h-6 w-6 rounded-full bg-zinc-950">
 														<img
-															src={recipient.profilePic}
-															alt={recipient.name}
+															src="https://cdn.discordapp.com/avatars/{recipient.user.id}/{recipient
+																.user.avatar}.webp?size=32"
+															alt={recipient.nick ||
+																recipient.user.global_name ||
+																recipient.user.username}
 															class="h-6 w-6 rounded-full"
 														/>
 													</div>
-													<span class="text-gray-200">{recipient.name}</span>
+													<span class="text-gray-200"
+														>{recipient.nick ||
+															recipient.user.global_name ||
+															recipient.user.username}</span
+													>
 												</div>
 											{/each}
 										</div>
@@ -331,6 +375,7 @@
 										min="0"
 										max="1000"
 										maxlength="7"
+										autocomplete="off"
 										class="flex-grow border-none bg-black text-gray-200 outline-none [appearance:textfield] focus:!ring-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 										bind:value={orderData.amount}
 										oninput={validateInput}
@@ -362,7 +407,10 @@
 									class="input border-gray-700 bg-black text-gray-200"
 									bind:value={orderData.message}
 								></textarea>
-								<p class="text-sm text-gray-400">Optional: Leave a note for the gift recipient.</p>
+								<p class="text-sm text-gray-400">
+									Optional: Leave a note for the gift recipient (i.e. what meal you want them to
+									have)
+								</p>
 							</div>
 
 							<!-- Submit button -->

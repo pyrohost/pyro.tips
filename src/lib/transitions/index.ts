@@ -10,6 +10,7 @@ export const blur = (
 				blurMultiplier: number;
 				duration: number;
 				easing: EasingFunction;
+				scale: number;
 		  }>
 		| undefined
 ): TransitionConfig => {
@@ -20,7 +21,7 @@ export const blur = (
 				t,
 				0,
 				1,
-				0.95,
+				config?.scale || 0.95,
 				1
 			)};`,
 		easing: config?.easing

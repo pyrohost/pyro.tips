@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PyroLogo from '$lib/components/PyroLogo.svelte';
 	import { fly } from 'svelte/transition';
 	let {
 		message,
@@ -82,6 +83,12 @@
 	</div>
 {/if}
 
-<div class="mx-auto flex h-screen w-fit items-center">
-	<a href="/order" class="btn w-fit">Order Now</a>
+<div class="mx-auto flex h-screen w-full max-w-lg flex-col items-center justify-center">
+	<PyroLogo style="mx-auto mb-6 h-16 w-16" />
+	<h1 class="mb-4 text-center text-3xl font-semibold text-white">pyro.food</h1>
+	<p class="mb-6 w-full text-center text-gray-200">
+		pyro.food allows you to treat any Pyro employee to a meal. It's simple — you find the meal
+		price, write out what the meal is and send it, and they'll be instantly notified about it!
+	</p>
+	<a href="/order" class="btn primary w-full">Order Now</a>
 </div>
