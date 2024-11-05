@@ -11,11 +11,13 @@
 	import { PUBLIC_STRIPE_KEY } from '$env/static/public';
 	import type { Stripe, StripeElements, PaymentIntent } from '@stripe/stripe-js';
 	import { blur } from '$lib/transitions';
+	import Spinner from '$lib/components/Spinner.svelte';
 
 	const { data } = $props();
 
 	let stripe: Stripe | null = $state(null);
 	let elements: StripeElements | null = $state(null);
+	let stripeFinishedLoading = $state(false);
 
 	$effect(() => {
 		setContext('stripe', { stripe, elements }); // https://github.com/joshnuss/svelte-stripe/issues/122
@@ -35,10 +37,12 @@
 	let isNewBelow = $state(true);
 
 	let orderData = $state({
-		amount: 0,
-		email: '',
+		amount: 5,
+		email: 'nullptr@pyro.host',
 		message: ''
 	});
+
+	let sentOrderData: typeof orderData | null = $state(null);
 
 	let dropdownMenu: HTMLDivElement | null = $state(null);
 
@@ -72,8 +76,23 @@
 
 	let selectedRecipient = $state(data.staff.find((r) => r.user.id === '1053012491006910504')); // i wonder who put this here...
 
+	let dumbStepId = $state('');
+	// let safeToRender = $state(false);
+	// let shouldRender = $state(false);
+
 	function setStep(num: number) {
 		isForwardNav = num > step;
+		if (num === 2) {
+			const id = crypto.randomUUID();
+			dumbStepId = id;
+			setTimeout(() => {
+				if (dumbStepId !== id || step !== 2) return;
+				elements?.getElement('payment')?.on('ready', () => {
+					console.log('Stripe finished loading');
+					stripeFinishedLoading = true;
+				});
+			}, 500);
+		}
 		step = num;
 	}
 
@@ -86,6 +105,7 @@
 	}
 
 	async function toPayment() {
+		if (document.getElementById('whaaatttt')) return;
 		// Validate order data
 		if (!selectedRecipient || !orderData.amount || !orderData.email) {
 			toastTitle = 'Error';
@@ -105,6 +125,17 @@
 		if (orderData.amount > 1000) {
 			toastTitle = 'Error';
 			toastMessage = 'While we appreciate your generosity, we can only accept orders up to $1000.';
+			return;
+		}
+
+		if (
+			pIntent?.amount === orderData.amount * 100 &&
+			sentOrderData?.amount === orderData.amount &&
+			sentOrderData?.email === orderData.email &&
+			sentOrderData?.message === orderData.message
+		) {
+			console.log($state.snapshot(sentOrderData), $state.snapshot(orderData));
+			setStep(2);
 			return;
 		}
 
@@ -135,17 +166,14 @@
 			isToastShown = true;
 			return;
 		}
-		stripe = await loadStripe(PUBLIC_STRIPE_KEY);
-		clientSecret = data.clientSecret;
+		sentOrderData = { ...orderData };
+		pIntent = data;
 		setStep(2);
 	}
 
 	function goToPreviousStep() {
-		clientSecret = '';
 		setStep(1);
 	}
-
-	let clientSecret = $state('');
 
 	onMount(() => {
 		const click = (e: MouseEvent) => {
@@ -185,7 +213,7 @@
 		}
 	}
 
-	let intentResult: PaymentIntent | null = $state(null);
+	let pIntent: PaymentIntent | null = $state(null);
 
 	const beginPayment = async () => {
 		if (!stripe || !elements) return;
@@ -204,11 +232,15 @@
 			toastType = 'error';
 			isToastShown = true;
 		} else {
-			intentResult = result.paymentIntent;
+			pIntent = result.paymentIntent;
 			console.log(JSON.stringify(result.paymentIntent));
 			setStep(3);
 		}
 	};
+
+	onMount(async () => {
+		stripe = await loadStripe(PUBLIC_STRIPE_KEY);
+	});
 </script>
 
 <div style="transform: translate({tx}px, {ty}px)" class="fixed left-0 top-0 z-[9999]">
@@ -216,7 +248,7 @@
 </div>
 
 <!-- Centered responsive form for ordering -->
-<div class="flex h-screen items-center justify-center px-4">
+<div class="-mt-10 flex h-screen items-center justify-center px-4">
 	<PyroToast
 		bind:shown={isToastShown}
 		title={toastTitle}
@@ -474,46 +506,79 @@
 					{/if}
 
 					<!-- Step 2: Billing Form -->
-					{#if step === 2 && !isLoading}
-						<div>
-							<Elements
-								bind:elements
-								variables={{
-									fontFamily: "'IBM Plex Sans', monospace",
-									fontSizeSm: '14px',
-									colorBackground: 'black',
-									borderRadius: '0'
-								}}
-								rules={{
-									'.Input': {
-										border: '1px solid #374151'
-									}
-								}}
-								theme="night"
-								{stripe}
-								{clientSecret}
+					{#if step === 2 && !isLoading && pIntent}
+						{@const transition = '600ms cubic-bezier(0.22, 1, 0.36, 1)'}
+						<div class="grid grid-cols-1 grid-rows-1">
+							<div
+								class="col-start-1 row-start-1"
+								id="whaaatttt"
+								style="transform: scale({stripeFinishedLoading
+									? 1
+									: 0.95}); opacity: {stripeFinishedLoading
+									? 1
+									: 0}; filter: blur({stripeFinishedLoading
+									? 0
+									: 8}px); transition: transform {transition}, filter {transition}, opacity {transition};"
 							>
-								{#if elements}
-									<PaymentElement options={{}} />
-								{/if}
-							</Elements>
-							<div class="mt-4 flex gap-4">
-								<button
-									type="button"
-									class="btn !w-fit !min-w-0 flex-shrink-0 bg-white !px-3 py-2 text-black transition-colors duration-200 hover:text-white hover:opacity-80 focus:outline-none"
-									onclick={goToPreviousStep}
-								>
-									<ChevronLeftIcon />
-								</button>
-								<button
-									onclick={beginPayment}
-									type="submit"
-									class="btn primary flex-grow"
-									disabled={isLoading}
-								>
-									Place Order
-								</button>
+								<div style="height: {stripeFinishedLoading ? 'fit' : '236px'}">
+									<Elements
+										bind:elements
+										variables={{
+											fontFamily: "'IBM Plex Sans', monospace",
+											fontSizeSm: '14px',
+											colorBackground: 'black',
+											borderRadius: '0'
+										}}
+										rules={{
+											'.Input': {
+												border: '1px solid #374151'
+											}
+										}}
+										theme="night"
+										{stripe}
+										clientSecret={pIntent.client_secret}
+									>
+										{#if elements}
+											<PaymentElement options={{}} />
+										{/if}
+									</Elements>
+								</div>
+								<div class="mt-4 flex gap-4">
+									<button
+										type="button"
+										class="btn !w-fit !min-w-0 flex-shrink-0 bg-white !px-3 py-2 text-black transition-colors duration-200 hover:text-white hover:opacity-80 focus:outline-none"
+										onclick={goToPreviousStep}
+									>
+										<ChevronLeftIcon />
+									</button>
+									<button
+										onclick={beginPayment}
+										type="submit"
+										class="btn primary flex-grow"
+										disabled={isLoading}
+									>
+										Place Order
+									</button>
+								</div>
 							</div>
+							{#if !stripeFinishedLoading}
+								<div
+									class="col-start-1 row-start-1 flex h-full w-full items-center justify-center"
+									out:blur={{
+										blurMultiplier: 2,
+										duration: 500,
+										easing: quintOut,
+										scale: {
+											start: 1,
+											end: 1.25
+										}
+									}}
+								>
+									<div class="h-16 w-16">
+										<Spinner />
+									</div>
+								</div>
+							{/if}
 						</div>
 					{/if}
 

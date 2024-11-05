@@ -25,12 +25,14 @@ export async function POST({ request }) {
 	const paymentIntent = await stripe.paymentIntents.create({
 		amount: body.orderData.amount * 100,
 		currency: 'usd',
-		payment_method_types: ['card'],
+		automatic_payment_methods: {
+			enabled: true
+		},
 		metadata: {
 			...body.orderData,
 			recipient: body.recipient
 		}
 	});
 
-	return json({ clientSecret: paymentIntent.client_secret });
+	return json(paymentIntent);
 }
