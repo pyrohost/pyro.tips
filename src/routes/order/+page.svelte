@@ -37,8 +37,8 @@
 	let isNewBelow = $state(true);
 
 	let orderData = $state({
-		amount: 5,
-		email: 'nullptr@pyro.host',
+		amount: 0,
+		email: '',
 		message: ''
 	});
 
