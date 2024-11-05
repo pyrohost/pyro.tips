@@ -575,7 +575,7 @@
 									}}
 								>
 									<div class="h-16 w-16">
-										<Spinner />
+										<Spinner thickness={6} />
 									</div>
 								</div>
 							{/if}

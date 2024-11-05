@@ -52,12 +52,10 @@
 	{/key}
 </div>
 
-<div
-	class="fixed bottom-0 left-0 flex w-screen justify-center px-4 pb-4 text-center text-neutral-600"
->
+<div class="fixed bottom-0 left-0 flex w-screen justify-center px-4 pb-4 text-center text-zinc-600">
 	<div>
 		© {new Date().getFullYear()} Pyro
-		<div class="mx-2 -mb-1 inline-block h-4 w-px bg-neutral-600"></div>
+		<div class="mx-2 -mb-1 inline-block h-4 w-px bg-zinc-600"></div>
 		Authored by&nbsp;<a class="underline" href="https://x.com/notnullptr" target="_blank">nullptr</a
 		>
 		and
