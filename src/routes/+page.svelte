@@ -58,7 +58,9 @@
 
 {#if shown}
 	<div
-		class={`fixed z-50 flex w-full max-w-sm items-center space-x-4 rounded-lg bg-zinc-900 p-4 shadow-lg ${positionClasses[toastPos]}`}
+		class="fixed z-50 flex w-full max-w-sm items-center space-x-4 rounded-lg bg-zinc-900 p-4 shadow-lg {positionClasses[
+			toastPos
+		]}"
 		transition:fly={{ y: '100%', duration: 300 }}
 	>
 		<svg

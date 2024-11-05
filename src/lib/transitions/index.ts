@@ -10,20 +10,49 @@ export const blur = (
 				blurMultiplier: number;
 				duration: number;
 				easing: EasingFunction;
-				scale: number;
+				scale: {
+					start: number;
+					end: number;
+				};
+				x: {
+					start: number;
+					end: number;
+				};
+				y: {
+					start: number;
+					end: number;
+				};
 		  }>
-		| undefined
+		| undefined,
+	dir: {
+		direction: 'in' | 'out' | 'both';
+	}
 ): TransitionConfig => {
+	const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 	return {
-		duration: config?.duration || 300,
+		duration: prefersReducedMotion ? 0 : config?.duration || 300,
 		css: (t) =>
-			`filter: blur(${(1 - t) * (config?.blurMultiplier || 1)}px); opacity: ${t}; transform: scale(${remap(
-				t,
-				0,
-				1,
-				config?.scale || 0.95,
-				1
-			)};`,
+			prefersReducedMotion
+				? ''
+				: `filter: blur(${(1 - t) * (config?.blurMultiplier || 1)}px); opacity: ${t}; transform: scale(${remap(
+						t,
+						0,
+						1,
+						(dir.direction !== 'out' ? config?.scale?.start : config?.scale?.end) || 0.9,
+						(dir.direction !== 'out' ? config?.scale?.end : config?.scale?.start) || 1
+					)}) translate(${remap(
+						t,
+						0,
+						1,
+						(dir.direction !== 'out' ? config?.x?.start : config?.x?.end) || 0,
+						(dir.direction !== 'out' ? config?.x?.end : config?.x?.start) || 0
+					)}px, ${remap(
+						t,
+						0,
+						1,
+						(dir.direction !== 'out' ? config?.y?.start : config?.y?.end) || 0,
+						(dir.direction !== 'out' ? config?.y?.end : config?.y?.start) || 0
+					)}px);`,
 		easing: config?.easing
 	};
 };

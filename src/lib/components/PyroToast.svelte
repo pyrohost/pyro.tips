@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { blur } from '$lib/transitions';
+	import { XIcon } from 'lucide-svelte';
+	import { quintOut } from 'svelte/easing';
 	import { fly } from 'svelte/transition';
 	let {
 		message,
@@ -57,26 +60,40 @@
 
 {#if shown}
 	<div
-		class={`fixed z-50 flex w-full max-w-sm items-center space-x-4 bg-zinc-900 p-4 shadow-lg ${positionClasses[toastPos]}`}
-		transition:fly={{ y: '100%', duration: 300 }}
+		class="fixed z-50 flex w-full max-w-sm space-x-4 bg-zinc-900 p-4 shadow-lg {positionClasses[
+			toastPos
+		]}"
+		in:blur={{
+			duration: 500,
+			blurMultiplier: 10,
+			easing: quintOut,
+			scale: {
+				start: 0.9,
+				end: 1
+			},
+			y: {
+				start: -25,
+				end: 0
+			}
+		}}
+		out:blur={{
+			duration: 500,
+			blurMultiplier: 10,
+			easing: quintOut,
+			scale: {
+				start: 1,
+				end: 0.9
+			},
+			y: {
+				start: 0,
+				end: 25
+			}
+		}}
 	>
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			class="h-6 w-6 {icons[toastType].color}"
-			fill="none"
-			viewBox="0 0 24 24"
-			stroke="currentColor"
-		>
-			<path
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				stroke-width="2"
-				d={icons[toastType].path}
-			/>
-		</svg>
+		<XIcon class="h-6 w-6 {icons[toastType].color} mt-1 flex-shrink-0" />
 
 		<div>
-			<h3 class={`text-lg font-semibold ${icons[toastType].color}`}>{title}</h3>
+			<h3 class="text-lg font-semibold {icons[toastType].color} flex-grow">{title}</h3>
 			<p>{message}</p>
 		</div>
 	</div>

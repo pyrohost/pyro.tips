@@ -1,7 +1,7 @@
 <script lang="ts">
 	import PyroLogo from '$lib/components/PyroLogo.svelte';
 	import PyroToast from '$lib/components/PyroToast.svelte';
-	import { onMount, tick } from 'svelte';
+	import { onMount, setContext, tick } from 'svelte';
 	import { quintOut } from 'svelte/easing';
 	import { ChevronDownIcon, ChevronLeftIcon, CircleCheck } from 'lucide-svelte';
 	import { getCaretCoordinates } from '$lib/util';
@@ -17,6 +17,10 @@
 	let stripe: Stripe | null = $state(null);
 	let elements: StripeElements | null = $state(null);
 
+	$effect(() => {
+		setContext('stripe', { stripe, elements }); // https://github.com/joshnuss/svelte-stripe/issues/122
+	});
+
 	let particleManager: ReturnType<typeof ChaChingParticles>;
 	let isLoading = $state(false);
 	let loadingTitle = $state('Working on it!');
@@ -27,6 +31,9 @@
 	let isToastShown = $state(false);
 	let isDropdownOpen = $state(false);
 	let step = $state(1);
+	let isForwardNav = $state(true);
+	let isNewBelow = $state(true);
+
 	let orderData = $state({
 		amount: 0,
 		email: '',
@@ -65,7 +72,15 @@
 
 	let selectedRecipient = $state(data.staff.find((r) => r.user.id === '1053012491006910504')); // i wonder who put this here...
 
+	function setStep(num: number) {
+		isForwardNav = num > step;
+		step = num;
+	}
+
 	function selectRecipient(recipient: (typeof data.staff)[0]) {
+		const oldIndex = data.staff.findIndex((r) => r.user.id === selectedRecipient?.user.id);
+		const newIndex = data.staff.findIndex((r) => r.user.id === recipient.user.id);
+		isNewBelow = newIndex < oldIndex;
 		selectedRecipient = recipient;
 		isDropdownOpen = false;
 	}
@@ -120,17 +135,15 @@
 			isToastShown = true;
 			return;
 		}
+		stripe = await loadStripe(PUBLIC_STRIPE_KEY);
 		clientSecret = data.clientSecret;
-		step = 2;
+		setStep(2);
 	}
 
 	function goToPreviousStep() {
-		step = 1;
+		clientSecret = '';
+		setStep(1);
 	}
-
-	onMount(async () => {
-		stripe = await loadStripe(PUBLIC_STRIPE_KEY);
-	});
 
 	let clientSecret = $state('');
 
@@ -172,33 +185,7 @@
 		}
 	}
 
-	let intentResult: PaymentIntent | null = $state({
-		id: 'pi_3QHi3HAy7mZMIB1W2USqhB7U',
-		object: 'payment_intent',
-		amount: 50000,
-		amount_details: { tip: {} },
-		automatic_payment_methods: null,
-		canceled_at: null,
-		cancellation_reason: null,
-		capture_method: 'automatic_async' as any,
-		client_secret: 'pi_3QHi3HAy7mZMIB1W2USqhB7U_secret_up7pWHuzqHL2Dv32AOXKGXUi8',
-		confirmation_method: 'automatic',
-		created: 1730795031,
-		currency: 'usd',
-		description: null,
-		last_payment_error: null,
-		livemode: false,
-		next_action: null,
-		payment_method: 'pm_1QHi3aAy7mZMIB1WZ7O6pVPE',
-		payment_method_configuration_details: null,
-		payment_method_types: ['card'],
-		processing: null,
-		receipt_email: null,
-		setup_future_usage: null,
-		shipping: null,
-		source: null,
-		status: 'succeeded'
-	});
+	let intentResult: PaymentIntent | null = $state(null);
 
 	const beginPayment = async () => {
 		if (!stripe || !elements) return;
@@ -206,15 +193,20 @@
 			elements,
 			redirect: 'if_required'
 		});
-		if (result.error) {
+		if (result.error || result.paymentIntent?.status !== 'succeeded') {
 			toastTitle = 'Error';
-			toastMessage = result.error.message || 'An error occurred.';
+			toastMessage =
+				result.error?.message ||
+				(result.paymentIntent?.status
+					? `Status is "${result.paymentIntent?.status}".`
+					: undefined) ||
+				'An error occurred.';
 			toastType = 'error';
 			isToastShown = true;
 		} else {
 			intentResult = result.paymentIntent;
 			console.log(JSON.stringify(result.paymentIntent));
-			step = 3;
+			setStep(3);
 		}
 	};
 </script>
@@ -237,10 +229,23 @@
 		<div class="grid grid-cols-1 grid-rows-1 place-items-center">
 			{#key step}
 				<div
-					transition:blur={{
+					in:blur={{
 						duration: 500,
 						easing: quintOut,
-						blurMultiplier: 3
+						blurMultiplier: 3,
+						x: {
+							start: isForwardNav ? 100 : -100,
+							end: 0
+						}
+					}}
+					out:blur={{
+						duration: 500,
+						easing: quintOut,
+						blurMultiplier: 3,
+						x: {
+							start: 0,
+							end: isForwardNav ? -100 : 100
+						}
 					}}
 					class="col-start-1 row-start-1"
 				>
@@ -284,6 +289,7 @@
 					{/if}
 
 					{#if step === 1 && !isLoading}
+						{@const translateAmount = 25}
 						<form class="flex flex-col space-y-4" onsubmit={(e) => e.preventDefault()}>
 							<!-- Custom Recipient dropdown -->
 							<div class="relative flex flex-col space-y-2">
@@ -291,22 +297,28 @@
 								<div class="relative">
 									<button
 										type="button"
-										class="dropdown-button relative flex w-full cursor-pointer items-center border border-gray-700 bg-black p-4 text-gray-200"
+										class="dropdown-button relative flex w-full cursor-pointer items-center overflow-hidden border border-gray-700 bg-black p-4 text-gray-200"
 										onclick={() => (isDropdownOpen = !isDropdownOpen)}
 									>
 										{#key selectedRecipient?.user.id}
 											<div
 												out:blur={{
-													blurMultiplier: 6,
+													blurMultiplier: 3,
 													duration: 500,
 													easing: quintOut,
-													scale: 0.75
+													y: {
+														start: 0,
+														end: isNewBelow ? translateAmount : -translateAmount
+													}
 												}}
 												in:blur={{
-													blurMultiplier: 6,
+													blurMultiplier: 3,
 													duration: 500,
 													easing: quintOut,
-													scale: 1.25
+													y: {
+														start: isNewBelow ? -translateAmount : translateAmount,
+														end: 0
+													}
 												}}
 												class="absolute left-3 flex items-center"
 											>
@@ -466,7 +478,6 @@
 						<div>
 							<Elements
 								bind:elements
-								on:loaded={() => {}}
 								variables={{
 									fontFamily: "'IBM Plex Sans', monospace",
 									fontSizeSm: '14px',
@@ -482,7 +493,9 @@
 								{stripe}
 								{clientSecret}
 							>
-								<PaymentElement options={{}} />
+								{#if elements}
+									<PaymentElement options={{}} />
+								{/if}
 							</Elements>
 							<div class="mt-4 flex gap-4">
 								<button

@@ -99,5 +99,11 @@ async function handleEvent(event: Stripe.Event) {
 			}
 			break;
 		}
+
+		case 'charge.dispute.created': {
+			const dispute = event.data.object;
+			console.log('Dispute created:', dispute);
+			break;
+		}
 	}
 }
