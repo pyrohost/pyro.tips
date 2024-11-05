@@ -11,6 +11,10 @@ button,
 	@apply flex min-w-24 cursor-pointer select-none appearance-none items-center justify-center border border-dashed border-zinc-800 bg-zinc-900 px-5 py-2.5 text-lg text-white shadow-xl shadow-black/35 hover:bg-zinc-900/80 active:bg-zinc-950 active:text-white;
 }
 
+.btn.primary {
+	@apply bg-white py-2 text-black transition-opacity duration-200 hover:text-black hover:opacity-80 focus:outline-none;
+}
+
 iconify-icon {
 	display: inline-block;
 	width: 1em;

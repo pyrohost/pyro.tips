@@ -52,8 +52,15 @@
 		if (!ctx) return;
 
 		let frame: number;
+		let lastTime = 0;
 
-		const draw = () => {
+		const draw = (time: number) => {
+			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+			// Calculate deltaTime in seconds
+			const deltaTime = (time - lastTime) / 1000;
+			lastTime = time;
+
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 			const particlesToRemove: (typeof particles)[0][] = [];
@@ -64,22 +71,24 @@
 					ctx.globalAlpha = 0;
 					return;
 				}
-				particle.opacity -= 0.01;
-				particle.x += particle.xVel;
-				particle.y += particle.yVel;
-				particle.yVel += 0.05;
-				particle.rotation += 0.1;
+
+				const intendedFramerate = 160;
+
+				// Update particle properties with deltaTime
+				particle.opacity -= 0.01 * (deltaTime * intendedFramerate);
+				particle.x += particle.xVel * deltaTime * intendedFramerate;
+				particle.y += particle.yVel * deltaTime * intendedFramerate;
+				particle.yVel += 0.05 * deltaTime * intendedFramerate;
+				particle.rotation += 0.1 * deltaTime * intendedFramerate;
 
 				// draw dollar sign
 				ctx.save();
 				ctx.globalAlpha = particle.opacity;
 				ctx.translate(particle.x, particle.y);
 				ctx.rotate(particle.rotation);
-				// particle.color is between 0 - 1 and should be used to determine how light/dark green the particle is
 				ctx.fillStyle = `hsl(120, 100%, ${particle.color * 50 + 50}%)`;
 
 				ctx.font = `${particle.size + 16}px 'IBM Plex Mono', monospace`;
-				// text align, text baseline
 				ctx.textAlign = 'center';
 				ctx.textBaseline = 'middle';
 				ctx.fillText('$', 0, 0);
@@ -91,7 +100,7 @@
 			frame = requestAnimationFrame(draw);
 		};
 
-		draw();
+		frame = requestAnimationFrame(draw);
 		return () => cancelAnimationFrame(frame);
 	});
 </script>

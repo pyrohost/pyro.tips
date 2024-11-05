@@ -81,3 +81,7 @@
 		</div>
 	</div>
 {/if}
+
+<div class="mx-auto flex h-screen w-fit items-center">
+	<a href="/order" class="btn w-fit">Order Now</a>
+</div>

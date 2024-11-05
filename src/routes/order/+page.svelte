@@ -2,12 +2,19 @@
 	import PyroLogo from '$lib/components/PyroLogo.svelte';
 	import PyroToast from '$lib/components/PyroToast.svelte';
 	import { onMount } from 'svelte';
-	import type { EasingFunction, TransitionConfig } from 'svelte/transition';
-
 	import { quintOut } from 'svelte/easing';
-	import { ChevronDownIcon } from 'lucide-svelte';
+	import { ChevronDownIcon, ChevronLeftIcon } from 'lucide-svelte';
 	import { getCaretCoordinates } from '$lib/util';
 	import ChaChingParticles from '$lib/components/ChaChingParticles.svelte';
+	import { loadStripe } from '@stripe/stripe-js';
+	import { PaymentElement, Elements } from 'svelte-stripe';
+	import { PUBLIC_STRIPE_KEY } from '$env/static/public';
+	import type { Stripe } from '@stripe/stripe-js';
+	import type { StripeElements } from '@stripe/stripe-js';
+	import { blur } from '$lib/transitions';
+
+	let stripe: Stripe | null = $state(null);
+	let elements: StripeElements | null = $state(null);
 
 	let particleManager: ReturnType<typeof ChaChingParticles>;
 	let isLoading = $state(false);
@@ -29,15 +36,7 @@
 	let ty = $state(0);
 
 	const shake = (duration: number, intensity: number) => {
-		// const interval = setInterval(() => {
-		// 	tx = Math.random() * 10 - 5;
-		// 	ty = Math.random() * 10 - 5;
-		// }, 1000 / 60);
-		// setTimeout(() => {
-		// 	clearInterval(interval);
-		// 	tx = 0;
-		// 	ty = 0;
-		// }, 500);
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 		const interval = setInterval(() => {
 			tx = Math.random() * intensity - intensity / 2;
 			ty = Math.random() * intensity - intensity / 2;
@@ -60,7 +59,7 @@
 		isDropdownOpen = false;
 	}
 
-	function toPayment() {
+	async function toPayment() {
 		// Validate order data
 		if (!selectedRecipient || !orderData.amount || !orderData.email) {
 			toastTitle = 'Error';
@@ -83,12 +82,39 @@
 			return;
 		}
 
+		const response = await fetch('/stripe/payment', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				orderData
+			})
+		});
+
+		if (!response.ok) {
+			toastTitle = 'Error';
+			toastMessage = 'An error occurred while processing your order. Please try again later.';
+			toastType = 'error';
+			isToastShown = true;
+			return;
+		}
+
+		const data = await response.json();
+		clientSecret = data.clientSecret;
+		console.log(data);
 		step = 2;
 	}
 
 	function goToPreviousStep() {
 		step = 1;
 	}
+
+	onMount(async () => {
+		stripe = await loadStripe(PUBLIC_STRIPE_KEY);
+	});
+
+	let clientSecret = $state('');
 
 	onMount(() => {
 		const click = (e: MouseEvent) => {
@@ -104,33 +130,6 @@
 		document.addEventListener('click', click);
 		return () => document.removeEventListener('click', click);
 	});
-
-	const remap = (value: number, low1: number, high1: number, low2: number, high2: number) =>
-		low2 + ((value - low1) * (high2 - low2)) / (high1 - low1);
-
-	const blur = (
-		node: HTMLElement,
-		config:
-			| Partial<{
-					blurMultiplier: number;
-					duration: number;
-					easing: EasingFunction;
-			  }>
-			| undefined
-	): TransitionConfig => {
-		return {
-			duration: config?.duration || 300,
-			css: (t, u) =>
-				`filter: blur(${(1 - t) * (config?.blurMultiplier || 1)}px); opacity: ${t}; transform: scale(${remap(
-					t,
-					0,
-					1,
-					0.95,
-					1
-				)};`,
-			easing: config?.easing
-		};
-	};
 
 	function validateInput(e: Event) {
 		const target = e.target as HTMLInputElement;
@@ -154,6 +153,22 @@
 			shake(100, 25);
 		}
 	}
+
+	const beginPayment = async () => {
+		if (!stripe || !elements) return;
+		const result = await stripe.confirmPayment({
+			elements,
+			redirect: 'if_required'
+		});
+		if (result.error) {
+			toastTitle = 'Error';
+			toastMessage = result.error.message || 'An error occurred.';
+			toastType = 'error';
+			isToastShown = true;
+		} else {
+			step = 3;
+		}
+	};
 </script>
 
 <div style="transform: translate({tx}px, {ty}px)" class="fixed left-0 top-0 z-[9999]">
@@ -191,7 +206,7 @@
 						{:else if step === 2}
 							<h1 class="mb-4 text-center text-3xl font-semibold text-white">Pay for Order</h1>
 							<p class="mx-auto mb-6 max-w-sm text-center text-gray-200">
-								Enter your payment details below to complete your order. Payments our securely
+								Enter your payment details below to complete your order. Payments are securely
 								processed by Stripe.
 							</p>
 						{/if}
@@ -351,9 +366,15 @@
 							</div>
 
 							<!-- Submit button -->
-							<div class="mt-4">
+							<div class="mt-4 flex gap-4">
+								<a
+									class="btn !w-fit !min-w-0 flex-shrink-0 bg-white !px-3 py-2 text-black transition-colors duration-200 hover:text-white hover:opacity-80 focus:outline-none"
+									href="/"
+								>
+									<ChevronLeftIcon />
+								</a>
 								<button
-									class="w-full bg-white py-2 text-black transition-colors duration-200 hover:text-white hover:opacity-80 focus:outline-none"
+									class="btn primary w-full flex-grow"
 									disabled={isLoading}
 									onclick={toPayment}
 								>
@@ -365,64 +386,45 @@
 
 					<!-- Step 2: Billing Form -->
 					{#if step === 2 && !isLoading}
-						<form class="flex flex-col space-y-4">
-							<!-- Card number input -->
-							<div class="flex flex-col space-y-2">
-								<label for="cardNumber" class="text-gray-200">Card Number</label>
-								<input
-									type="text"
-									id="cardNumber"
-									name="cardNumber"
-									class="w-full rounded-md border border-gray-700 bg-black p-2 text-gray-200"
-									placeholder="1234 5678 9123 4567"
-									maxlength="19"
-								/>
-							</div>
-
-							<!-- Expiry date and CVV -->
-							<div class="flex space-x-4">
-								<div class="flex w-1/2 flex-col space-y-2">
-									<label for="expiryDate" class="text-gray-200">Expiry Date</label>
-									<input
-										type="text"
-										id="expiryDate"
-										name="expiryDate"
-										class="w-full rounded-md border border-gray-700 bg-black p-2 text-gray-200"
-										placeholder="MM / YY"
-										maxlength="5"
-									/>
-								</div>
-								<div class="flex w-1/2 flex-col space-y-2">
-									<label for="cvv" class="text-gray-200">CVV</label>
-									<input
-										type="text"
-										id="cvv"
-										name="cvv"
-										class="w-full rounded-md border border-gray-700 bg-black p-2 text-gray-200"
-										placeholder="123"
-										maxlength="3"
-									/>
-								</div>
-							</div>
-
-							<!-- Back and Submit buttons -->
-							<div class="flex justify-between">
+						<div>
+							<Elements
+								bind:elements
+								on:loaded={() => {}}
+								variables={{
+									fontFamily: "'IBM Plex Sans', monospace",
+									fontSizeSm: '14px',
+									colorBackground: 'black',
+									borderRadius: '0'
+								}}
+								rules={{
+									'.Input': {
+										border: '1px solid #374151'
+									}
+								}}
+								theme="night"
+								{stripe}
+								{clientSecret}
+							>
+								<PaymentElement options={{}} />
+							</Elements>
+							<div class="mt-4 flex gap-4">
 								<button
 									type="button"
-									class="btn bg-white py-2 text-black transition-colors duration-200 hover:text-white hover:opacity-80 focus:outline-none"
+									class="btn !w-fit !min-w-0 flex-shrink-0 bg-white !px-3 py-2 text-black transition-colors duration-200 hover:text-white hover:opacity-80 focus:outline-none"
 									onclick={goToPreviousStep}
 								>
-									Back
+									<ChevronLeftIcon />
 								</button>
 								<button
+									onclick={beginPayment}
 									type="submit"
-									class="btn bg-white py-2 text-black transition-colors duration-200 hover:text-white hover:opacity-80 focus:outline-none"
+									class="btn primary flex-grow"
 									disabled={isLoading}
 								>
 									Place Order
 								</button>
 							</div>
-						</form>
+						</div>
 					{/if}
 
 					{#if step === 3 && !isLoading}
