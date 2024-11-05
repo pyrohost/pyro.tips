@@ -3,14 +3,13 @@
 	import PyroToast from '$lib/components/PyroToast.svelte';
 	import { onMount, tick } from 'svelte';
 	import { quintOut } from 'svelte/easing';
-	import { ChevronDownIcon, ChevronLeftIcon } from 'lucide-svelte';
+	import { ChevronDownIcon, ChevronLeftIcon, CircleCheck } from 'lucide-svelte';
 	import { getCaretCoordinates } from '$lib/util';
 	import ChaChingParticles from '$lib/components/ChaChingParticles.svelte';
 	import { loadStripe } from '@stripe/stripe-js';
 	import { PaymentElement, Elements } from 'svelte-stripe';
 	import { PUBLIC_STRIPE_KEY } from '$env/static/public';
-	import type { Stripe } from '@stripe/stripe-js';
-	import type { StripeElements } from '@stripe/stripe-js';
+	import type { Stripe, StripeElements, PaymentIntent } from '@stripe/stripe-js';
 	import { blur } from '$lib/transitions';
 
 	const { data } = $props();
@@ -173,6 +172,34 @@
 		}
 	}
 
+	let intentResult: PaymentIntent | null = $state({
+		id: 'pi_3QHi3HAy7mZMIB1W2USqhB7U',
+		object: 'payment_intent',
+		amount: 50000,
+		amount_details: { tip: {} },
+		automatic_payment_methods: null,
+		canceled_at: null,
+		cancellation_reason: null,
+		capture_method: 'automatic_async' as any,
+		client_secret: 'pi_3QHi3HAy7mZMIB1W2USqhB7U_secret_up7pWHuzqHL2Dv32AOXKGXUi8',
+		confirmation_method: 'automatic',
+		created: 1730795031,
+		currency: 'usd',
+		description: null,
+		last_payment_error: null,
+		livemode: false,
+		next_action: null,
+		payment_method: 'pm_1QHi3aAy7mZMIB1WZ7O6pVPE',
+		payment_method_configuration_details: null,
+		payment_method_types: ['card'],
+		processing: null,
+		receipt_email: null,
+		setup_future_usage: null,
+		shipping: null,
+		source: null,
+		status: 'succeeded'
+	});
+
 	const beginPayment = async () => {
 		if (!stripe || !elements) return;
 		const result = await stripe.confirmPayment({
@@ -185,6 +212,8 @@
 			toastType = 'error';
 			isToastShown = true;
 		} else {
+			intentResult = result.paymentIntent;
+			console.log(JSON.stringify(result.paymentIntent));
 			step = 3;
 		}
 	};
@@ -476,26 +505,16 @@
 					{/if}
 
 					{#if step === 3 && !isLoading}
-						<div class="max-w-md p-10 shadow-xl">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke-width="1.5"
-								stroke="currentColor"
-								class="mx-auto mb-2 size-12 text-white"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-								/>
-							</svg>
-
-							<h1 class="mb-4 text-3xl font-semibold text-white">Great Success!</h1>
-							<p class="mb-6 max-w-sm text-gray-200">
-								Thank you for your support! We'll share updates as they are come. You rock :)
+						<div class="w-full max-w-md p-10 shadow-xl">
+							<CircleCheck class="mx-auto -mt-8 mb-8 h-12 w-12" />
+							<h1 class="mb-4 text-center text-3xl font-semibold text-white">Success!</h1>
+							<p class="mb-6 w-full text-center text-gray-200">
+								You just sent ${orderData.amount} to {selectedRecipient?.nick ||
+									selectedRecipient?.user.global_name ||
+									selectedRecipient?.user.username} for a meal! They'll email you with a picture and
+								a thank you when they get it.
 							</p>
+							<a class="btn primary w-full" href="/"> Back to Home </a>
 						</div>
 					{/if}
 				</div>
