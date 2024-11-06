@@ -40,23 +40,28 @@ async function handleEvent(event: Stripe.Event) {
 			};
 			const recipient = HookManager.staff.find((r) => r.user.id === metadata.recipient)!;
 			try {
-				const res = await fetch(DISCORD_WEBHOOK_URL, {
+				const isPyro = recipient.user.id === '1237177197094113321';
+				await fetch(DISCORD_WEBHOOK_URL, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json'
 					},
 					body: JSON.stringify({
-						content: `<@${recipient.user.id}>`,
+						avatar_url:
+							'https://cdn.discordapp.com/avatars/1237177197094113321/1831aa88532a30eaaf023cac5aec8633.webp?size=128',
+						username: 'pyro.tips',
+						content: isPyro ? '<@&1104932372467695768>' : `<@${recipient.user.id}>`,
 						embeds: [
 							{
 								author: {
-									name: 'pyro.food // new meal!',
+									name: 'pyro.tips // new donation!',
 									icon_url:
 										'https://cdn.discordapp.com/avatars/1247401390083539025/1daacad0dd2e9dfeb215681354db20e1.webp?size=80',
-									url: 'https://pyro.food'
+									url: 'https://pyro.tips'
 								},
-								title:
-									'open up the dungeons where the engineers are kept - a new meal has been received!',
+								title: `$${parseInt(metadata.amount.toString()).toFixed(2)} donation from ${
+									metadata.email
+								}`,
 								fields: [
 									{
 										name: 'from',
@@ -65,7 +70,7 @@ async function handleEvent(event: Stripe.Event) {
 									},
 									{
 										name: 'to',
-										value: `<@${recipient.user.id}>`,
+										value: isPyro ? '**THE ENTIRE TEAM!!!**' : `<@${recipient.user.id}>`,
 										inline: true
 									},
 									{
@@ -92,8 +97,6 @@ async function handleEvent(event: Stripe.Event) {
 						]
 					})
 				});
-				const body = await res.text();
-				console.log(body);
 			} catch (e) {
 				console.error(e);
 			}

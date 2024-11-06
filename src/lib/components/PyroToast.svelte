@@ -67,10 +67,6 @@
 			duration: 500,
 			blurMultiplier: 10,
 			easing: quintOut,
-			scale: {
-				start: 0.9,
-				end: 1
-			},
 			y: {
 				start: -25,
 				end: 0

@@ -61,17 +61,36 @@
 	let tx = $state(0);
 	let ty = $state(0);
 
-	const shake = (duration: number, intensity: number) => {
-		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-		const interval = setInterval(() => {
+	const shake = (
+		startIntensity: number
+	): {
+		cancel: () => void;
+		setIntensity: (intensity: number) => void;
+	} => {
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) () => {};
+		let intensity = startIntensity || 1;
+		let cancelled = false;
+		let interval = setInterval(() => {
 			tx = Math.random() * intensity - intensity / 2;
 			ty = Math.random() * intensity - intensity / 2;
 		}, 1000 / 60);
-		setTimeout(() => {
-			clearInterval(interval);
-			tx = 0;
-			ty = 0;
-		}, duration);
+		return {
+			cancel: () => {
+				clearInterval(interval);
+				tx = 0;
+				ty = 0;
+				cancelled = true;
+			},
+			setIntensity: (i: number) => {
+				if (cancelled) return;
+				intensity = i;
+			}
+		};
+	};
+
+	const shakeFor = (duration: number, intensity: number) => {
+		const { cancel } = shake(intensity);
+		setTimeout(cancel, duration);
 	};
 
 	let selectedRecipient = $state(data.staff.find((r) => r.user.id === '1053012491006910504')); // i wonder who put this here...
@@ -139,6 +158,18 @@
 			return;
 		}
 
+		const { setIntensity, cancel } = shake(1);
+
+		let intensity = 0;
+
+		const interval = setInterval(() => {
+			if (intensity > 10) {
+				intensity = 10;
+			}
+			intensity += 2;
+			setIntensity(intensity);
+		}, 16);
+
 		const response = await fetch('/stripe/payment', {
 			method: 'POST',
 			headers: {
@@ -149,6 +180,9 @@
 				recipient: selectedRecipient.user.id
 			})
 		});
+
+		cancel();
+		clearInterval(interval);
 
 		if (!response.ok) {
 			toastTitle = 'Error';
@@ -209,7 +243,7 @@
 			const absoluteTop = top + localTop;
 			const absoluteLeft = left + localLeft;
 			particleManager.spawnParticle(absoluteLeft, absoluteTop);
-			shake(100, 25);
+			shakeFor(100, 25);
 		}
 	}
 
@@ -217,10 +251,24 @@
 
 	const beginPayment = async () => {
 		if (!stripe || !elements) return;
+		const { setIntensity, cancel } = shake(1);
+
+		let intensity = 0;
+
+		const interval = setInterval(() => {
+			if (intensity > 10) {
+				intensity = 10;
+			}
+			intensity += 2;
+			setIntensity(intensity);
+		}, 50);
+
 		const result = await stripe.confirmPayment({
 			elements,
 			redirect: 'if_required'
 		});
+		clearInterval(interval);
+		cancel();
 		if (result.error || result.paymentIntent?.status !== 'succeeded') {
 			toastTitle = 'Error';
 			toastMessage =
@@ -248,7 +296,9 @@
 </div>
 
 <!-- Centered responsive form for ordering -->
-<div class="-mt-10 flex h-screen items-center justify-center px-4">
+<div
+	class="-mt-10 flex h-screen items-center justify-center px-4 [@media(max-height:835px)]:mt-0 [@media(max-height:835px)]:items-baseline"
+>
 	<PyroToast
 		bind:shown={isToastShown}
 		title={toastTitle}
@@ -281,12 +331,14 @@
 					}}
 					class="col-start-1 row-start-1"
 				>
-					<PyroLogo style="mx-auto mb-6 h-16 w-16" />
+					<div class="[@media(max-height:900px)]:hidden">
+						<PyroLogo style="mx-auto mb-6 h-16 w-16" />
+					</div>
 					{#if !isLoading}
 						{#if step === 1}
-							<h1 class="mb-4 text-center text-3xl font-semibold text-white">Order Meal</h1>
+							<h1 class="mb-4 text-center text-3xl font-semibold text-white">Send a donation</h1>
 							<p class="mx-auto mb-6 max-w-sm text-center text-gray-200">
-								Select your order details below to gift a meal to our team members.
+								Select your order details below to gift a donation to our team members.
 							</p>
 						{:else if step === 2}
 							<h1 class="mb-4 text-center text-3xl font-semibold text-white">Pay for Order</h1>
@@ -481,8 +533,8 @@
 									bind:value={orderData.message}
 								></textarea>
 								<p class="text-sm text-gray-400">
-									Optional: Leave a note for the gift recipient (i.e. what meal you want them to
-									have)
+									Optional: Leave a note for the gift recipient (maybe a product link or a thank
+									you!).
 								</p>
 							</div>
 
@@ -583,16 +635,19 @@
 					{/if}
 
 					{#if step === 3 && !isLoading}
-						<div class="w-full max-w-md p-10 shadow-xl">
-							<CircleCheck class="mx-auto -mt-8 mb-8 h-12 w-12" />
-							<h1 class="mb-4 text-center text-3xl font-semibold text-white">Success!</h1>
-							<p class="mb-6 w-full text-center text-gray-200">
-								You just sent ${orderData.amount} to {selectedRecipient?.nick ||
-									selectedRecipient?.user.global_name ||
-									selectedRecipient?.user.username} for a meal! They'll email you with a picture and
-								a thank you when they get it.
-							</p>
-							<a class="btn primary w-full" href="/"> Back to Home </a>
+						<div>
+							<div class="w-[512px] p-10 shadow-xl">
+								<CircleCheck class="mx-auto -mt-8 mb-8 h-12 w-12" />
+								<h1 class="mb-4 text-center text-3xl font-semibold text-white">Success!</h1>
+								<p class="mb-6 w-full text-center text-gray-200">
+									You just sent ${orderData.amount} to {selectedRecipient?.nick ||
+										selectedRecipient?.user.global_name ||
+										selectedRecipient?.user.username}! If you gave a product description or a meal
+									or something similar to be bought for them, they'll send you an email with a
+									picture and a thank you note.
+								</p>
+								<a class="btn primary w-full" href="/"> Back to Home </a>
+							</div>
 						</div>
 					{/if}
 				</div>

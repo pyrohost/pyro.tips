@@ -87,10 +87,10 @@
 
 <div class="mx-auto flex h-screen w-full max-w-lg flex-col items-center justify-center">
 	<PyroLogo style="mx-auto mb-6 h-16 w-16" />
-	<h1 class="mb-4 text-center text-3xl font-semibold text-white">pyro.food</h1>
+	<h1 class="mb-4 text-center text-3xl font-semibold text-white">pyro.tips</h1>
 	<p class="mb-6 w-full text-center text-gray-200">
-		pyro.food allows you to treat any Pyro employee to a meal. It's simple — you find the meal
-		price, write out what the meal is and send it, and they'll be instantly notified about it!
+		pyro.tips allows you to treat any Pyro employee with a donation. It's simple — you select a
+		member of staff, choose a tip amount, and we'll take care of the rest.
 	</p>
 	<a href="/order" class="btn primary w-full">Order Now</a>
 </div>

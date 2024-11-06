@@ -26,10 +26,6 @@
 				x: {
 					start: isForwardNav ? 100 : -100,
 					end: 0
-				},
-				scale: {
-					start: 0.9,
-					end: 1
 				}
 			}}
 			out:blur={{
@@ -39,10 +35,6 @@
 				x: {
 					start: 0,
 					end: isForwardNav ? -100 : 100
-				},
-				scale: {
-					start: 1,
-					end: 0.9
 				}
 			}}
 			class="col-start-1 row-start-1"
@@ -52,7 +44,9 @@
 	{/key}
 </div>
 
-<div class="fixed bottom-0 left-0 flex w-screen justify-center px-4 pb-4 text-center text-zinc-600">
+<div
+	class="left-0flex fixed bottom-0 w-screen justify-center px-4 pb-4 text-center text-zinc-600 [@media(max-height:835px)]:hidden"
+>
 	<div>
 		© {new Date().getFullYear()} Pyro
 		<div class="mx-2 -mb-1 inline-block h-4 w-px bg-zinc-600"></div>
