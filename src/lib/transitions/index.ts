@@ -37,6 +37,7 @@ export const blur = (
 					end: number;
 				};
 				delay: number;
+				opacity: boolean;
 		  }>
 		| undefined,
 	dir: {
@@ -44,13 +45,14 @@ export const blur = (
 	}
 ): TransitionConfig => {
 	const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	if (typeof config?.opacity === 'undefined' && config) config.opacity = true;
 	return {
 		delay: config?.delay || 0,
 		duration: prefersReducedMotion ? 0 : config?.duration || 300,
 		css: (t) =>
 			prefersReducedMotion
 				? ''
-				: `filter: blur(${(1 - t) * (config?.blurMultiplier || 1)}px); opacity: ${t}; transform: scale(${remap(
+				: `filter: blur(${(1 - t) * (config?.blurMultiplier || 1)}px); opacity: ${config?.opacity ? t : 1}; transform: scale(${remap(
 						t,
 						0,
 						1,

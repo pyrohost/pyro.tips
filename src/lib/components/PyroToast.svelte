@@ -1,22 +1,8 @@
 <script lang="ts">
 	import { blur } from '$lib/transitions';
+	import { toastsStore } from '$lib/util';
 	import { XIcon } from 'lucide-svelte';
 	import { quintOut } from 'svelte/easing';
-	import { fly } from 'svelte/transition';
-	let {
-		message,
-		title,
-		duration = 2000,
-		shown = $bindable(false),
-		type = 'success',
-		position = 'bottom'
-	} = $props();
-
-	type ToastType = 'success' | 'error' | 'warning' | 'info';
-	let toastType: ToastType = type as ToastType;
-
-	type Position = 'top' | 'top-left' | 'top-right' | 'bottom' | 'bottom-left' | 'bottom-right';
-	let toastPos: Position = position as Position;
 
 	// Icon mapping based on type
 	const icons = {
@@ -37,60 +23,41 @@
 			path: 'M13 16h-1v-4h-1m1-4h.01M21 12A9 9 0 113 12a9 9 0 0118 0z'
 		}
 	};
-
-	// Position classes based on the position prop
-	const positionClasses = {
-		top: 'top-4 left-1/2 transform -translate-x-1/2',
-		'top-left': 'top-4 left-4',
-		'top-right': 'top-4 right-4',
-		bottom: 'bottom-4 left-1/2 transform -translate-x-1/2',
-		'bottom-left': 'bottom-4 left-4',
-		'bottom-right': 'bottom-4 right-4'
-	};
-
-	// Automatically hide the toast after the duration
-	$effect(() => {
-		if (shown) {
-			setTimeout(() => {
-				shown = false;
-			}, duration);
-		}
-	});
 </script>
 
-{#if shown}
-	<div
-		class="fixed z-50 flex w-full max-w-sm space-x-4 bg-zinc-900 p-4 shadow-lg {positionClasses[
-			toastPos
-		]}"
-		in:blur={{
-			duration: 500,
-			blurMultiplier: 10,
-			easing: quintOut,
-			y: {
-				start: -25,
-				end: 0
-			}
-		}}
-		out:blur={{
-			duration: 500,
-			blurMultiplier: 10,
-			easing: quintOut,
-			scale: {
-				start: 1,
-				end: 0.9
-			},
-			y: {
-				start: 0,
-				end: 25
-			}
-		}}
-	>
-		<XIcon class="h-6 w-6 {icons[toastType].color} mt-1 flex-shrink-0" />
+<div class="flex flex-col gap-4">
+	{#each toastsStore.toasts as toast}
+		<div
+			class="z-50 flex w-full max-w-sm space-x-4 bg-zinc-900 p-4 shadow-lg"
+			in:blur={{
+				duration: 500,
+				blurMultiplier: 10,
+				easing: quintOut,
+				y: {
+					start: -25,
+					end: 0
+				}
+			}}
+			out:blur={{
+				duration: 500,
+				blurMultiplier: 10,
+				easing: quintOut,
+				scale: {
+					start: 1,
+					end: 0.9
+				},
+				y: {
+					start: 0,
+					end: 25
+				}
+			}}
+		>
+			<XIcon class="h-6 w-6 {icons[toast.type].color} mt-1 flex-shrink-0" />
 
-		<div>
-			<h3 class="text-lg font-semibold {icons[toastType].color} flex-grow">{title}</h3>
-			<p>{message}</p>
+			<div>
+				<h3 class="text-lg font-semibold {icons[toast.type].color} flex-grow">{toast.title}</h3>
+				<p>{toast.message}</p>
+			</div>
 		</div>
-	</div>
-{/if}
+	{/each}
+</div>

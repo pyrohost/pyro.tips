@@ -12,7 +12,7 @@ button,
 }
 
 .btn.primary {
-	@apply bg-white py-2 text-black transition-opacity duration-200 hover:text-black hover:opacity-80 focus-within:outline-offset-2 focus-within:outline-white focus-within:outline-2 focus-within:ring-0;
+	@apply bg-white py-2 text-black transition-opacity duration-200 hover:text-black hover:opacity-80 focus-within:outline-offset-2 focus-within:outline-white focus-within:outline-2 focus-within:ring-0 disabled:opacity-50 disabled:cursor-auto;
 }
 
 iconify-icon {

@@ -4,6 +4,7 @@
 	import '../app.css';
 	import { beforeNavigate } from '$app/navigation';
 	import PyroLogo from '$lib/components/PyroLogo.svelte';
+	import PyroToast from '$lib/components/PyroToast.svelte';
 	let { children, data } = $props();
 
 	crypto.randomUUID =
@@ -64,4 +65,8 @@
 		and
 		<a class="underline" href="https://x.com/SticksDev" target="_blank">Sticks</a>
 	</div>
+</div>
+
+<div class="fixed right-4 top-4">
+	<PyroToast />
 </div>
