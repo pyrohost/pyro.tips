@@ -12,6 +12,7 @@
 	import type { Stripe, StripeElements, PaymentIntent } from '@stripe/stripe-js';
 	import { blur } from '$lib/transitions';
 	import Spinner from '$lib/components/Spinner.svelte';
+	import CompletableSpinner from '$lib/components/CompletableSpinner.svelte';
 
 	const { data } = $props();
 
@@ -25,6 +26,7 @@
 
 	let particleManager: ReturnType<typeof ChaChingParticles>;
 	let isLoading = $state(false);
+	let isPaymentProcessing = $state(false);
 	let isDropdownOpen = $state(false);
 	let step = $state(1);
 	let isForwardNav = $state(true);
@@ -268,30 +270,19 @@
 
 	const beginPayment = async () => {
 		if (!stripe || !elements) return;
-		const { setIntensity, cancel } = shake(1);
-
-		let intensity = 0;
-
-		const interval = setInterval(() => {
-			if (intensity > 10) {
-				intensity = 10;
-			}
-			intensity += 2;
-			setIntensity(intensity);
-		}, 50);
 
 		isLoading = true;
+		isPaymentProcessing = true;
 
 		const result = await stripe.confirmPayment({
 			elements,
 			redirect: 'if_required'
 		});
 
-		isLoading = false;
+		isPaymentProcessing = false;
 
-		clearInterval(interval);
-		cancel();
 		if (result.error || result.paymentIntent?.status !== 'succeeded') {
+			isLoading = false;
 			// toastTitle = 'Error';
 			// toastMessage =
 			// 	result.error?.message ||
@@ -313,7 +304,10 @@
 			});
 		} else {
 			pIntent = result.paymentIntent;
-			setStep(3);
+			setTimeout(() => {
+				setStep(3);
+				isLoading = false;
+			}, 800);
 		}
 	};
 
@@ -381,6 +375,7 @@
 										type="button"
 										class="dropdown-button relative flex w-full cursor-pointer items-center overflow-hidden border border-gray-700 bg-black p-4 text-gray-200"
 										onclick={() => (isDropdownOpen = !isDropdownOpen)}
+										disabled={isLoading}
 									>
 										{#key selectedRecipient?.user.id}
 											<div
@@ -503,6 +498,7 @@
 										bind:value={orderData.amount}
 										oninput={validateInput}
 										pattern="\d+"
+										disabled={isLoading}
 									/>
 								</div>
 								<p class="text-sm text-gray-400">Specify the amount in USD.</p>
@@ -517,6 +513,7 @@
 									name="email"
 									class="input border-gray-700 bg-black text-gray-200"
 									bind:value={orderData.email}
+									disabled={isLoading}
 								/>
 								<p class="text-sm text-gray-400">Enter your email for updates on your order.</p>
 							</div>
@@ -529,6 +526,7 @@
 									name="message"
 									class="input border-gray-700 bg-black text-gray-200"
 									bind:value={orderData.message}
+									disabled={isLoading}
 								></textarea>
 								<p class="text-sm text-gray-400">
 									Optional: Leave a note for the gift recipient (maybe a product link or a thank
@@ -598,16 +596,52 @@
 										type="button"
 										class="btn !w-fit !min-w-0 flex-shrink-0 bg-white !px-3 py-2 text-black transition-colors duration-200 hover:text-white hover:opacity-80 focus:outline-none"
 										onclick={goToPreviousStep}
+										disabled={isLoading}
 									>
 										<ChevronLeftIcon />
 									</button>
 									<button
 										onclick={beginPayment}
 										type="submit"
-										class="btn primary flex-grow"
-										disabled={isLoading}
+										class="btn primary relative grid flex-grow grid-cols-1 grid-rows-1 place-items-center disabled:!bg-white"
+										disabled={isLoading || isPaymentProcessing}
 									>
-										Place Order
+										{#if !isLoading}
+											<p
+												transition:blur={{
+													blurMultiplier: 2,
+													duration: 500,
+													easing: quintOut,
+													scale: {
+														start: 1.1,
+														end: 1
+													}
+												}}
+												class="col-start-1 row-start-1"
+											>
+												Pay ${parseInt(orderData.amount.toString()).toFixed(2)}
+											</p>
+										{:else}
+											<div
+												transition:blur={{
+													blurMultiplier: 2,
+													duration: 500,
+													easing: quintOut,
+													scale: {
+														start: 1.1,
+														end: 1
+													}
+												}}
+												class="absolute col-start-1 row-start-1 flex h-full w-full items-center justify-center"
+											>
+												<CompletableSpinner
+													done={!isPaymentProcessing}
+													invert
+													size={24}
+													thickness={2}
+												/>
+											</div>
+										{/if}
 									</button>
 								</div>
 							</div>
