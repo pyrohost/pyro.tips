@@ -11,7 +11,6 @@
 	beforeNavigate(({ from, to }) => {
 		if (to && from) {
 			isForwardNav = to.url.pathname.length > from.url.pathname.length;
-			console.log(isForwardNav);
 		}
 	});
 </script>

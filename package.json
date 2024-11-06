@@ -38,8 +38,10 @@
 		"vite": "^5.0.3"
 	},
 	"dependencies": {
+		"@prisma/client": "5.22.0",
 		"discord-webhook-ts": "^5.0.0",
 		"email-validator": "^2.0.4",
-		"lucide-svelte": "^0.454.0"
+		"lucide-svelte": "^0.454.0",
+		"prisma": "^5.22.0"
 	}
 }

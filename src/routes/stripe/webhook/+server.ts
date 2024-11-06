@@ -4,9 +4,10 @@ import {
 	SECRET_STRIPE_KEY,
 	WEBHOOK_SIGNING_SECRET
 } from '$env/static/private';
+import { prisma } from '$lib/server/db/index.js';
+import type { Member } from '$lib/types/index.js';
 import { json } from '@sveltejs/kit';
 import Stripe from 'stripe';
-import { HookManager } from '$lib/hook-manager/index.js';
 
 const stripe = new Stripe(SECRET_STRIPE_KEY);
 
@@ -38,7 +39,8 @@ async function handleEvent(event: Stripe.Event) {
 				message?: string;
 				recipient: string;
 			};
-			const recipient = HookManager.staff.find((r) => r.user.id === metadata.recipient)!;
+			const staff = (await prisma.staffMember.findMany()).map((x) => x.data) as unknown as Member[];
+			const recipient = staff.find((r) => r.user.id === metadata.recipient)!;
 			try {
 				const isPyro = recipient.user.id === '1237177197094113321';
 				await fetch(DISCORD_WEBHOOK_URL, {
@@ -100,12 +102,6 @@ async function handleEvent(event: Stripe.Event) {
 			} catch (e) {
 				console.error(e);
 			}
-			break;
-		}
-
-		case 'charge.dispute.created': {
-			const dispute = event.data.object;
-			console.log('Dispute created:', dispute);
 			break;
 		}
 	}

@@ -1,5 +1,5 @@
 import { SECRET_STRIPE_KEY } from '$env/static/private';
-import { HookManager } from '$lib/hook-manager/index.js';
+import { HookManager } from '$lib/types/index.js';
 import { json } from '@sveltejs/kit';
 import Stripe from 'stripe';
 

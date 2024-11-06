@@ -107,7 +107,6 @@
 			setTimeout(() => {
 				if (dumbStepId !== id || step !== 2) return;
 				elements?.getElement('payment')?.on('ready', () => {
-					console.log('Stripe finished loading');
 					stripeFinishedLoading = true;
 				});
 			}, 500);
@@ -153,7 +152,6 @@
 			sentOrderData?.email === orderData.email &&
 			sentOrderData?.message === orderData.message
 		) {
-			console.log($state.snapshot(sentOrderData), $state.snapshot(orderData));
 			setStep(2);
 			return;
 		}
@@ -281,7 +279,6 @@
 			isToastShown = true;
 		} else {
 			pIntent = result.paymentIntent;
-			console.log(JSON.stringify(result.paymentIntent));
 			setStep(3);
 		}
 	};

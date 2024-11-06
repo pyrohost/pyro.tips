@@ -1,4 +1,4 @@
-interface Member {
+export interface Member {
 	avatar: null | string;
 	banner: null | string;
 	communication_disabled_until: null;
@@ -40,10 +40,4 @@ interface Avatardecorationdatum {
 	asset: string;
 	sku_id: string;
 	expires_at: null;
-}
-
-export class HookManager {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	public static interval: any;
-	public static staff: Member[] = [];
 }

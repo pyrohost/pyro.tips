@@ -1,8 +1,11 @@
-import { HookManager } from '$lib/hook-manager';
+import { prisma } from '$lib/server/db';
+import type { Member } from '$lib/types';
 
-export const load = ({ url }) => {
+export const load = async ({ url }) => {
+	// get all staff from prisma
+	const staff = (await prisma.staffMember.findMany()).map((x) => x.data) as unknown as Member[];
 	return {
-		staff: HookManager.staff,
-		pathname: url.pathname
+		pathname: url.pathname,
+		staff
 	};
 };
