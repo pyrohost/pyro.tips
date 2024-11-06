@@ -6,6 +6,16 @@
 	import PyroLogo from '$lib/components/PyroLogo.svelte';
 	let { children, data } = $props();
 
+	crypto.randomUUID =
+		crypto.randomUUID ||
+		(() => {
+			// this is an alright method, but its a tad slower than the native method
+			const url = URL.createObjectURL(new Blob([]));
+			const uuid = url.split('/').pop();
+			URL.revokeObjectURL(url);
+			return uuid;
+		});
+
 	let isForwardNav = $state(true);
 
 	beforeNavigate(({ from, to }) => {
@@ -15,7 +25,7 @@
 	});
 </script>
 
-<div class="grid grid-cols-1 grid-rows-1 px-4">
+<div class="grid grid-cols-1 grid-rows-1 px-8">
 	{#key data.pathname}
 		<div
 			in:blur={{
@@ -44,7 +54,7 @@
 </div>
 
 <div
-	class="left-0flex fixed bottom-0 w-screen justify-center px-4 pb-4 text-center text-zinc-600 [@media(max-height:835px)]:hidden"
+	class="fixed bottom-0 left-0 hidden w-screen justify-center px-4 pb-4 text-center text-zinc-600 sm:flex [@media(max-height:916px)]:hidden"
 >
 	<div>
 		© {new Date().getFullYear()} Pyro

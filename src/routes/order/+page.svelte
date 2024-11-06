@@ -112,6 +112,10 @@
 			}, 500);
 		}
 		step = num;
+		tick().then(() => {
+			// scroll to top
+			window.scrollTo({ top: 0, behavior: 'instant' });
+		});
 	}
 
 	function selectRecipient(recipient: (typeof data.staff)[0]) {
@@ -240,7 +244,7 @@
 			// this is the absolute position of the caret
 			const absoluteTop = top + localTop;
 			const absoluteLeft = left + localLeft;
-			particleManager.spawnParticle(absoluteLeft, absoluteTop);
+			particleManager.spawnParticle(absoluteLeft, absoluteTop + window.scrollY);
 			shakeFor(100, 25);
 		}
 	}
@@ -288,14 +292,12 @@
 	});
 </script>
 
-<div style="transform: translate({tx}px, {ty}px)" class="fixed left-0 top-0 z-[9999]">
+<div style="transform: translate({tx}px, {ty}px)" class="absolute left-0 top-0 z-[9999]">
 	<ChaChingParticles bind:this={particleManager} />
 </div>
 
 <!-- Centered responsive form for ordering -->
-<div
-	class="-mt-10 flex h-screen items-center justify-center px-4 [@media(max-height:835px)]:mt-0 [@media(max-height:835px)]:items-baseline"
->
+<div class="flex h-screen items-center justify-center sm:h-[calc(100vh-48px)]">
 	<PyroToast
 		bind:shown={isToastShown}
 		title={toastTitle}
@@ -304,8 +306,11 @@
 		position="top-right"
 		type={toastType}
 	/>
-	<div class="w-full max-w-md bg-black p-8 shadow-xl" style="transform: translate({tx}px, {ty}px)">
-		<div class="grid grid-cols-1 grid-rows-1 place-items-center">
+	<div
+		class="mb-auto mt-auto max-h-full w-full max-w-md bg-black shadow-xl"
+		style="transform: translate({tx}px, {ty}px)"
+	>
+		<div class="grid grid-cols-1 grid-rows-1 place-items-center pb-16 pt-16">
 			{#key step}
 				<div
 					in:blur={{
@@ -328,9 +333,8 @@
 					}}
 					class="col-start-1 row-start-1"
 				>
-					<div class="[@media(max-height:900px)]:hidden">
-						<PyroLogo style="mx-auto mb-6 h-16 w-16" />
-					</div>
+					<PyroLogo style="mx-auto mb-6 h-16 w-16" />
+
 					{#if !isLoading}
 						{#if step === 1}
 							<h1 class="mb-4 text-center text-3xl font-semibold text-white">Send a donation</h1>
@@ -632,9 +636,9 @@
 					{/if}
 
 					{#if step === 3 && !isLoading}
-						<div>
-							<div class="w-[512px] p-10 shadow-xl">
-								<CircleCheck class="mx-auto -mt-8 mb-8 h-12 w-12" />
+						<div class="px-4">
+							<div class="w-full max-w-[512px] shadow-xl">
+								<CircleCheck class="mx-auto mb-8 h-12 w-12" />
 								<h1 class="mb-4 text-center text-3xl font-semibold text-white">Success!</h1>
 								<p class="mb-6 w-full text-center text-gray-200">
 									You just sent ${orderData.amount} to {selectedRecipient?.nick ||
