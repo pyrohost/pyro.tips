@@ -1,16 +1,23 @@
-FROM oven/bun
-
+FROM oven/bun:1 AS base
 WORKDIR /app
-COPY package.json package.json
-RUN bun install
+
+COPY package.json bun.lockb* ./
+RUN bun install --frozen-lockfile
 
 COPY . .
 
+RUN bunx prisma generate
+
+RUN bun run build
+
+FROM base AS runner
+WORKDIR /app
+
+COPY --from=base /app/node_modules ./node_modules
+COPY --from=base /app/build ./build
+
+ENV NODE_ENV=production
+USER bun
 EXPOSE 3000
 
-# Add an entrypoint script to write environment variables to .env
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["bun", "./build"]
+CMD ["bun", "./build/index.js"]

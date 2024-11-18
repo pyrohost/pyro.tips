@@ -1,12 +1,11 @@
-import { SECRET_STRIPE_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import { prisma } from '$lib/server/db/index.js';
 import type { Member } from '$lib/types';
 import { json } from '@sveltejs/kit';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(SECRET_STRIPE_KEY);
-
 export async function POST({ request }) {
+	const stripe = new Stripe(env.SECRET_STRIPE_KEY);
 	const staff = (await prisma.staffMember.findMany()).map((x) => x.data as unknown as Member);
 	const body = await request.json();
 	if (typeof body.recipient !== 'string' || !staff.some((r) => r.user.id === body.recipient)) {

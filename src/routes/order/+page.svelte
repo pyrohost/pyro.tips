@@ -8,7 +8,7 @@
 	import ChaChingParticles from '$lib/components/ChaChingParticles.svelte';
 	import { loadStripe } from '@stripe/stripe-js';
 	import { PaymentElement, Elements } from 'svelte-stripe';
-	import { PUBLIC_STRIPE_KEY } from '$env/static/public';
+	import { env } from '$env/dynamic/public';
 	import type { Stripe, StripeElements, PaymentIntent } from '@stripe/stripe-js';
 	import { blur } from '$lib/transitions';
 	import Spinner from '$lib/components/Spinner.svelte';
@@ -312,7 +312,7 @@
 	};
 
 	onMount(async () => {
-		stripe = await loadStripe(PUBLIC_STRIPE_KEY);
+		stripe = await loadStripe(env.PUBLIC_STRIPE_KEY);
 	});
 </script>
 

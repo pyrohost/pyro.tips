@@ -1,18 +1,13 @@
 // handle stripe webhook
-import {
-	DISCORD_WEBHOOK_URL,
-	SECRET_STRIPE_KEY,
-	WEBHOOK_SIGNING_SECRET
-} from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import { prisma } from '$lib/server/db/index.js';
 import type { Member } from '$lib/types/index.js';
 import { json } from '@sveltejs/kit';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(SECRET_STRIPE_KEY);
-
 export async function POST({ request }) {
-	const endpointSecret = WEBHOOK_SIGNING_SECRET;
+	const stripe = new Stripe(env.SECRET_STRIPE_KEY);
+	const endpointSecret = env.WEBHOOK_SIGNING_SECRET;
 
 	const sig = request.headers.get('stripe-signature') || '';
 	const payload = await request.text();
@@ -43,7 +38,7 @@ async function handleEvent(event: Stripe.Event) {
 			const recipient = staff.find((r) => r.user.id === metadata.recipient)!;
 			try {
 				const isPyro = recipient.user.id === '1237177197094113321';
-				await fetch(DISCORD_WEBHOOK_URL, {
+				await fetch(env.DISCORD_WEBHOOK_URL, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json'

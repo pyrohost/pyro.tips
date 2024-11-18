@@ -1,15 +1,11 @@
-import {
-	DISCORD_CLIENT_ID,
-	DISCORD_CLIENT_SECRET,
-	DISCORD_REDIRECT_URI
-} from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import { prisma } from '$lib/server/db/index.js';
 import type { Member } from '$lib/types';
 import { redirect } from '@sveltejs/kit';
 
 export async function load({ url }) {
 	const code = url.searchParams.get('code');
-	if (!code) return { redirectUri: DISCORD_REDIRECT_URI };
+	if (!code) return { redirectUri: env.DISCORD_REDIRECT_URI };
 	await processCode(code); // you can remove the await but it wont show the user on redirect
 	return redirect(303, '/');
 }
@@ -21,11 +17,11 @@ async function processCode(code: string) {
 			'Content-Type': 'application/x-www-form-urlencoded'
 		},
 		body: new URLSearchParams({
-			client_id: DISCORD_CLIENT_ID,
-			client_secret: DISCORD_CLIENT_SECRET,
+			client_id: env.DISCORD_CLIENT_ID,
+			client_secret: env.DISCORD_CLIENT_SECRET,
 			grant_type: 'authorization_code',
 			code,
-			redirect_uri: DISCORD_REDIRECT_URI
+			redirect_uri: env.DISCORD_REDIRECT_URI
 		})
 	});
 	const body = (await response.json()) as {
