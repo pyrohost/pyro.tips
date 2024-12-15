@@ -12,6 +12,9 @@
 		"lint": "prettier --check . && eslint .",
 		"postinstall": "prisma migrate dev"
 	},
+	"prisma": {
+		"schema": "prisma/schema.prisma"
+	},
 	"devDependencies": {
 		"@stripe/stripe-js": "^4.9.0",
 		"@sveltejs/adapter-auto": "^3.0.0",
