@@ -1,6 +1,9 @@
 FROM oven/bun:1 AS base
 WORKDIR /app
 
+RUN --mount=type=secret,id=DATABASE_URL \
+    DATABASE_URL="$(cat /run/secrets/DATABASE_URL)"
+
 COPY package.json bun.lockb* ./
 COPY prisma ./prisma/
 RUN bun install --frozen-lockfile
