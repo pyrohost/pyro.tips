@@ -9,37 +9,23 @@ ARG DISCORD_WEBHOOK_URL
 ARG PUBLIC_STRIPE_KEY
 ARG SECRET_STRIPE_KEY
 
-# Get all Secrets
-RUN --mount=type=secret,id=DATABASE_URL \
-    DATABASE_URL="$(cat /run/secrets/DATABASE_URL)"
-RUN --mount=type=secret,id=DISCORD_CLIENT_ID \
-    DISCORD_CLIENT_ID="$(cat /run/secrets/DISCORD_CLIENT_ID)"
-RUN --mount=type=secret,id=DISCORD_CLIENT_SECRET \
-    DISCORD_CLIENT_SECRET="$(cat /run/secrets/DISCORD_CLIENT_SECRET)"
-RUN --mount=type=secret,id=DISCORD_WEBHOOK_URL \
-    DISCORD_WEBHOOK_URL="$(cat /run/secrets/DISCORD_WEBHOOK_URL)"
-RUN --mount=type=secret,id=PUBLIC_STRIPE_KEY \
-    PUBLIC_STRIPE_KEY="$(cat /run/secrets/PUBLIC_STRIPE_KEY)"
-RUN --mount=type=secret,id=SECRET_STRIPE_KEY \
-    SECRET_STRIPE_KEY="$(cat /run/secrets/SECRET_STRIPE_KEY)"
-RUN --mount=type=secret,id=WEBHOOK_SIGNING_SECRET \
-    WEBHOOK_SIGNING_SECRET="$(cat /run/secrets/WEBHOOK_SIGNING_SECRET)"
-
-ENV DATABASE_URL=${DATABASE_URL}
-ENV DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
-ENV DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
-ENV DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
-ENV DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
-ENV PUBLIC_STRIPE_KEY=${PUBLIC_STRIPE_KEY}
-ENV SECRET_STRIPE_KEY=${SECRET_STRIPE_KEY}
-
 COPY package.json bun.lockb* ./
 COPY prisma ./prisma/
-RUN bun install --frozen-lockfile
+RUN --mount=type=secret,id=DATABASE_URL \
+    --mount=type=secret,id=DISCORD_CLIENT_ID \
+    --mount=type=secret,id=DISCORD_CLIENT_SECRET \
+    --mount=type=secret,id=DISCORD_WEBHOOK_URL \
+    --mount=type=secret,id=PUBLIC_STRIPE_KEY \
+    --mount=type=secret,id=SECRET_STRIPE_KEY \
+    DATABASE_URL=$(cat /run/secrets/DATABASE_URL) \
+    DISCORD_CLIENT_ID=$(cat /run/secrets/DISCORD_CLIENT_ID) \
+    DISCORD_CLIENT_SECRET=$(cat /run/secrets/DISCORD_CLIENT_SECRET) \
+    DISCORD_WEBHOOK_URL=$(cat /run/secrets/DISCORD_WEBHOOK_URL) \
+    PUBLIC_STRIPE_KEY=$(cat /run/secrets/PUBLIC_STRIPE_KEY) \
+    SECRET_STRIPE_KEY=$(cat /run/secrets/SECRET_STRIPE_KEY) \
+    bun install --frozen-lockfile && bunx prisma generate
 
 COPY . .
-
-RUN bunx prisma generate
 
 RUN bun run build
 
