@@ -1,8 +1,21 @@
 FROM oven/bun:1 AS base
 WORKDIR /app
 
+# Get all Secrets
 RUN --mount=type=secret,id=DATABASE_URL \
     DATABASE_URL="$(cat /run/secrets/DATABASE_URL)"
+RUN --mount=type=secret,id=DISCORD_CLIENT_ID \
+    DISCORD_CLIENT_ID="$(cat /run/secrets/DISCORD_CLIENT_ID)"
+RUN --mount=type=secret,id=DISCORD_CLIENT_SECRET \
+    DISCORD_CLIENT_SECRET="$(cat /run/secrets/DISCORD_CLIENT_SECRET)"
+RUN --mount=type=secret,id=DISCORD_WEBHOOK_URL \
+    DISCORD_WEBHOOK_URL="$(cat /run/secrets/DISCORD_WEBHOOK_URL)"
+RUN --mount=type=secret,id=PUBLIC_STRIPE_KEY \
+    PUBLIC_STRIPE_KEY="$(cat /run/secrets/PUBLIC_STRIPE_KEY)"
+RUN --mount=type=secret,id=SECRET_STRIPE_KEY \
+    SECRET_STRIPE_KEY="$(cat /run/secrets/SECRET_STRIPE_KEY)"
+RUN --mount=type=secret,id=WEBHOOK_SIGNING_SECRET \
+    WEBHOOK_SIGNING_SECRET="$(cat /run/secrets/WEBHOOK_SIGNING_SECRET)"
 
 COPY package.json bun.lockb* ./
 COPY prisma ./prisma/
