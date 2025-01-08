@@ -1,5 +1,10 @@
+# fly.toml app configuration file generated for tips-pyro on 2025-01-08T00:44:38-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
 app = 'tips-pyro'
-primary_region = 'dfw'
+primary_region = 'lax'
 
 [build]
 dockerfile='Dockerfile'
