@@ -6,7 +6,7 @@
 	<a
 		class="flex cursor-pointer items-center gap-1 rounded-sm bg-[#5865f2] px-3 py-2 transition-colors duration-200 ease-in-out hover:bg-[#4752c4] active:bg-[#3c45a5]"
 		aria-label="Sign in with Discord"
-		href="https://discord.com/oauth2/authorize?client_id=1303548128774983711&response_type=code&redirect_uri={encodeURIComponent(
+		href="https://discord.com/oauth2/authorize?client_id=1107058928061263942&response_type=code&redirect_uri={encodeURIComponent(
 			data.redirectUri
 		)}&scope=identify+guilds.members.read"
 	>
